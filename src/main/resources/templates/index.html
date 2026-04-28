@@ -57,6 +57,25 @@
         </header>
 
         <main>
+            <!-- Echo Note Section (top-level card; moved from Admin > Task Management) -->
+            <section class="card collapsible-card" data-card-id="echo-note"
+                th:attr="data-help-title=#{page.dashboard.section.echo_note},data-help-desc=#{page.dashboard.echo_note.summary},data-help-placement='bottom'">
+                <div class="card-header" onclick="toggleCard('echo-note')">
+                    <h2 th:text="#{page.dashboard.section.echo_note}">Echo Note 보관함</h2>
+                    <span class="collapse-icon">&#9660;</span>
+                </div>
+                <div class="card-content">
+                    <div class="info-grid">
+                        <div class="info-item full-width">
+                            <span class="label" th:text="#{page.dashboard.label.privacy}">강화 privacy</span>
+                            <span class="value" th:text="#{page.dashboard.echo_note.summary}">echo-server 가 아닌 사용자 PC 에 보관되는 echo-note 메시지를 관리해요.</span>
+                        </div>
+                    </div>
+                    <a id="btnManageEchoNote" href="/echo-note" class="btn btn-primary" style="margin-top: 15px;"
+                        th:text="#{page.dashboard.btn.manage_echo_note}">Echo Note 관리</a>
+                </div>
+            </section>
+
             <!-- Status Section (Current Status) -->
             <section class="card collapsible-card" id="statusSection" data-card-id="current-status"
                 th:attr="data-help-title=#{tour.muse.status.title},data-help-desc=#{tour.muse.status.desc},data-help-placement='bottom'">
@@ -206,15 +225,6 @@
                                 <a id="btnManageCleanup" href="/cleanup" class="btn btn-primary"
                                               th:attr="data-help-title=#{help.dashboard.cleanup.title},data-help-desc=#{help.dashboard.cleanup.desc},data-help-placement='top'"
                                    th:text="#{page.dashboard.btn.manage_cleanup}">정리 경로 관리</a>
-                            </div>
-                            <div class="info-item full-width" style="background-color: rgba(0,0,0,0.15);">
-                                <h4 style="margin: 0 0 10px; color: var(--text-primary);" th:text="#{page.dashboard.section.echo_note}">Echo Note 보관함</h4>
-                                <div class="info-item" style="margin-bottom: 12px;">
-                                    <span class="label" th:text="#{page.dashboard.label.privacy}">강화 privacy</span>
-                                    <span class="value" th:text="#{page.dashboard.echo_note.summary}">echo-server 가 아닌 사용자 PC 에 보관되는 echo-note 메시지를 관리해요.</span>
-                                </div>
-                                <a id="btnManageEchoNote" href="/echo-note" class="btn btn-secondary"
-                                    th:text="#{page.dashboard.btn.manage_echo_note}">Echo Note 관리</a>
                             </div>
                         </div>
                     </div>
