@@ -21,6 +21,11 @@ app:
       device-registration: /api/devices
       alive-status: /api/alive/status
       alive-history: /api/alive/history
+      echo-note-preview: /api/external/echo-note/preview
+      echo-note-send: /api/external/echo-note/send
+      echo-note-exchange-continuation: /api/external/echo-note/exchange-continuation-token
+      # echo external API 버전. echo-server 가 /v1/ 도입 시 "v1" 로 변경하고 위 echo-note-* 경로도 함께 갱신.
+      external-api-version: unversioned
 
   scheduler:
     alive-check:

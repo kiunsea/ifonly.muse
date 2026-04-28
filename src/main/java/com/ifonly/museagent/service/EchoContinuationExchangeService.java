@@ -1,5 +1,6 @@
 package com.ifonly.museagent.service;
 
+import com.ifonly.museagent.config.EchoServerProperties;
 import com.ifonly.museagent.config.EchoUrlWhitelist;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,14 +34,18 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 public class EchoContinuationExchangeService {
 
-  private static final String EXCHANGE_PATH = "/api/external/echo-note/exchange-continuation-token";
+  private static final String DEFAULT_EXCHANGE_PATH =
+      "/api/external/echo-note/exchange-continuation-token";
 
   private final RestTemplate restTemplate;
   private final EchoUrlWhitelist echoUrlWhitelist;
+  private final EchoServerProperties echoServerProperties;
 
-  public EchoContinuationExchangeService(EchoUrlWhitelist echoUrlWhitelist) {
+  public EchoContinuationExchangeService(
+      EchoUrlWhitelist echoUrlWhitelist, EchoServerProperties echoServerProperties) {
     this.restTemplate = new RestTemplate();
     this.echoUrlWhitelist = echoUrlWhitelist;
+    this.echoServerProperties = echoServerProperties;
   }
 
   /**
@@ -60,7 +65,13 @@ public class EchoContinuationExchangeService {
     }
     // v1.7.0: 화이트리스트 검증 — 가짜 popup 이 동봉한 가짜 echoUrl 로 자격증명을 끌어오는 phishing 차단.
     String trimmedUrl = echoUrlWhitelist.validateAndNormalize(echoUrl);
-    String endpoint = trimmedUrl + EXCHANGE_PATH;
+    String exchangePath =
+        echoServerProperties.getApi() == null
+                || echoServerProperties.getApi().getEchoNoteExchangeContinuation() == null
+                || echoServerProperties.getApi().getEchoNoteExchangeContinuation().isBlank()
+            ? DEFAULT_EXCHANGE_PATH
+            : echoServerProperties.getApi().getEchoNoteExchangeContinuation();
+    String endpoint = trimmedUrl + exchangePath;
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);

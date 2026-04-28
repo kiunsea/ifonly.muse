@@ -7,6 +7,7 @@ import com.ifonly.museagent.dto.DeviceRegistrationRequest;
 import com.ifonly.museagent.dto.DeviceResponse;
 import com.ifonly.museagent.exception.DeviceRegistrationException;
 import com.ifonly.museagent.exception.EchoServerConnectionException;
+import jakarta.annotation.PostConstruct;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,17 @@ public class EchoServerClient {
   public EchoServerClient(WebClient webClient, EchoServerProperties properties) {
     this.webClient = webClient;
     this.properties = properties;
+  }
+
+  @PostConstruct
+  void logExpectedExternalApiVersion() {
+    String version =
+        properties.getApi() == null ? null : properties.getApi().getExternalApiVersion();
+    log.info(
+        "Echo external API contract: muse expects version='{}' (echo-note paths preview={}, send={})",
+        version,
+        properties.getApi() == null ? null : properties.getApi().getEchoNotePreview(),
+        properties.getApi() == null ? null : properties.getApi().getEchoNoteSend());
   }
 
   /**
@@ -217,7 +229,7 @@ public class EchoServerClient {
     try {
       return webClient
           .post()
-          .uri(properties.getUrl() + "/api/external/echo-note/preview")
+          .uri(properties.getUrl() + properties.getApi().getEchoNotePreview())
           .bodyValue(body)
           .retrieve()
           .bodyToMono(Map.class)
@@ -263,7 +275,7 @@ public class EchoServerClient {
     try {
       return webClient
           .post()
-          .uri(properties.getUrl() + "/api/external/echo-note/send")
+          .uri(properties.getUrl() + properties.getApi().getEchoNoteSend())
           .bodyValue(body)
           .retrieve()
           .bodyToMono(Map.class)
