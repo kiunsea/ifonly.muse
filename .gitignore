@@ -22,3 +22,40 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# Gradle
+/.gradle/
+/build/
+/bin/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# IDE
+/.idea/
+*.iml
+/.vscode/
+/.classpath
+/.project
+/.settings/
+
+# Runtime / local data
+/data/
+/logs/
+/tmp/
+/schedules/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Packaging runtime artifacts (downloaded/generated, not source)
+/packaging/distribution/jre/
+/packaging/distribution/data/
+/packaging/distribution/logs/
+/packaging/distribution/schedules/
+/packaging/distribution/*.jar
+
+# OS
+.DS_Store
+Thumbs.db

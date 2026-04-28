@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{page.task_settings.title}">작업 설정 관리</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script>(function(){var t=localStorage.getItem('theme-preference');if(t)document.documentElement.dataset.theme=t;})()</script>
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/muse-agent.svg(v=${appVersion})}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico(v=${appVersion})}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h1 class="service-title">
+                        <a href="/" class="service-title-brand">
+                            <img th:src="@{/img/muse-agent.svg(v=${appVersion})}" src="/img/muse-agent.svg" alt="Muse Agent" class="service-title-logo">
+                            <span>Muse Agent</span>
+                        </a>
+                        <span class="service-title-divider">/</span>
+                        <span th:text="#{page.task_settings.title}">작업 설정 관리</span>
+                    </h1>
+                    <p class="subtitle" th:text="#{page.task_settings.subtitle}">작업 발생 조건과 Alive-Check 실행 기준을 설정합니다.</p>
+                </div>
+                <div class="lang-switcher">
+                    <a th:href="@{''(lang='ko')}" th:classappend="${#locale.language == 'ko'} ? ' active' : ''" th:text="#{nav.lang.ko}">한국어</a>
+                    <a th:href="@{''(lang='en')}" th:classappend="${#locale.language == 'en'} ? ' active' : ''" th:text="#{nav.lang.en}">EN</a>
+                    <a th:href="@{''(lang='ja')}" th:classappend="${#locale.language == 'ja'} ? ' active' : ''" th:text="#{nav.lang.ja}">日本語</a>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section id="aliveCheckSettingsSection" class="card">
+                <h2 th:text="#{page.schedule.section.alive_check_settings}">Alive-Check 설정</h2>
+                <p style="margin-bottom: 15px; color: var(--text-secondary);" th:text="#{page.schedule.msg.alive_check_settings}">
+                    Alive 상태 폴링 주기와 스케줄 실행 임계값을 설정합니다. 변경 사항은 다음 폴링 주기부터 즉시 적용됩니다.
+                </p>
+                <div id="aliveCheckSettingsForm" style="display: flex; flex-direction: column; gap: 15px; max-width: 480px;">
+                    <div>
+                        <label for="inputIntervalMs" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: var(--text-secondary);" th:text="#{page.schedule.label.interval_ms}">폴링 주기 (ms)</label>
+                        <input type="number" id="inputIntervalMs" min="60000" step="60000"
+                               style="width: 100%; padding: 8px 12px; background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.9rem;"
+                               th:placeholder="#{page.schedule.ph.interval_ms}" placeholder="예: 600000"/>
+                        <small style="color: var(--text-secondary); font-size: 0.8rem;" th:text="#{page.schedule.help.interval_ms}">최소 60000ms (1분). 기본값: 600000ms (10분)</small>
+                    </div>
+                    <div>
+                        <label for="inputThresholdDays" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: var(--text-secondary);" th:text="#{page.schedule.label.threshold_days}">실행 임계값 (일)</label>
+                        <input type="number" id="inputThresholdDays" min="1" step="1"
+                               style="width: 100%; padding: 8px 12px; background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.9rem;"
+                               th:placeholder="#{page.schedule.ph.threshold_days}" placeholder="예: 7"/>
+                        <small style="color: var(--text-secondary); font-size: 0.8rem;" th:text="#{page.schedule.help.threshold_days}">첫 EXPIRED 감지 시 first_trigger ON. 이후 EXPIRED 재감지 시점에 first_trigger ON 경과가 임계 일수 이상이면 실행. 기본값: 7일</small>
+                    </div>
+                    <div>
+                        <button id="btnSaveSettings" class="btn btn-primary" onclick="saveAliveCheckSettings()" th:text="#{page.schedule.btn.save_settings}">설정 저장</button>
+                    </div>
+                    <div id="settingsResult" class="hidden"></div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px;">
+                <a href="/" class="btn btn-secondary" th:text="#{page.schedule.btn.back}">대시보드로</a>
+                <a href="/echo-config" class="btn btn-outline" th:text="#{page.dashboard.btn.manage_echo_config}">Echo Server 설정 관리</a>
+            </div>
+            <p style="text-align: center; margin: 0;">&copy; 2026 if-only Project. Muse Agent v<span th:text="${appVersion}">0.0.0</span></p>
+        </footer>
+    </div>
+
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    const I18N = {
+        settingsSaved: /*[[#{page.schedule.js.settings_saved}]]*/ '설정이 저장되었습니다.',
+        settingsError: /*[[#{page.schedule.js.settings_error}]]*/ '설정 저장 중 오류가 발생했습니다.'
+    };
+
+    async function loadAliveCheckSettings() {
+        try {
+            const response = await fetch('/api/settings/alive-check');
+            const data = await response.json();
+
+            if (data.success && data.data) {
+                document.getElementById('inputIntervalMs').value = data.data.intervalMs;
+                document.getElementById('inputThresholdDays').value = data.data.thresholdDays;
+            }
+        } catch (error) {
+            // no-op
+        }
+    }
+
+    async function saveAliveCheckSettings() {
+        const btn = document.getElementById('btnSaveSettings');
+        const resultDiv = document.getElementById('settingsResult');
+        const intervalMs = parseInt(document.getElementById('inputIntervalMs').value, 10);
+        const thresholdDays = parseInt(document.getElementById('inputThresholdDays').value, 10);
+
+        if (isNaN(intervalMs) || intervalMs < 60000) {
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = '<p style="color: var(--danger-color);">' + I18N.settingsError + ' (min 60000ms)</p>';
+            return;
+        }
+        if (isNaN(thresholdDays) || thresholdDays < 1) {
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = '<p style="color: var(--danger-color);">' + I18N.settingsError + ' (min 1 day)</p>';
+            return;
+        }
+
+        btn.disabled = true;
+        resultDiv.classList.add('hidden');
+
+        try {
+            const response = await fetch('/api/settings/alive-check', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ intervalMs: intervalMs, thresholdDays: thresholdDays })
+            });
+            const data = await response.json();
+
+            resultDiv.classList.remove('hidden');
+            if (data.success) {
+                resultDiv.innerHTML = '<p style="color: var(--success-color);">' + I18N.settingsSaved + '</p>';
+                if (data.data) {
+                    document.getElementById('inputIntervalMs').value = data.data.intervalMs;
+                    document.getElementById('inputThresholdDays').value = data.data.thresholdDays;
+                }
+                setTimeout(function() { resultDiv.classList.add('hidden'); }, 3000);
+            } else {
+                resultDiv.innerHTML = '<p style="color: var(--danger-color);">' + (data.message || I18N.settingsError) + '</p>';
+            }
+        } catch (error) {
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = '<p style="color: var(--danger-color);">Error: ' + error.message + '</p>';
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadAliveCheckSettings();
+    });
+    /*]]>*/
+    </script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <springProfile name="default">
+    <property name="LOG_DIR">logs</property>
+    <property name="LOG_FILE">muse-agent</property>
+    <property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</property>
+  </springProfile>
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>${LOG_PATTERN}</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+  </appender>
+
+  <!-- 일반 로그 파일 -->
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${LOG_DIR}/${LOG_FILE}.log</file>
+    <encoder>
+      <pattern>${LOG_PATTERN}</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>${LOG_DIR}/${LOG_FILE}-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
+      <maxFileSize>10MB</maxFileSize>
+      <maxHistory>30</maxHistory>
+      <totalSizeCap>300MB</totalSizeCap>
+    </rollingPolicy>
+  </appender>
+
+  <!-- 에러 로그 파일 -->
+  <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${LOG_DIR}/${LOG_FILE}-error.log</file>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>ERROR</level>
+    </filter>
+    <encoder>
+      <pattern>${LOG_PATTERN}</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>${LOG_DIR}/${LOG_FILE}-error-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
+      <maxFileSize>10MB</maxFileSize>
+      <maxHistory>30</maxHistory>
+      <totalSizeCap>100MB</totalSizeCap>
+    </rollingPolicy>
+  </appender>
+
+  <!-- 비동기 로거 (성능 최적화) -->
+  <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+    <queueSize>512</queueSize>
+    <discardingThreshold>0</discardingThreshold>
+    <appender-ref ref="FILE" />
+  </appender>
+
+  <!-- Muse Agent 로거 -->
+  <logger name="com.ifonly.museagent" level="DEBUG" additivity="false">
+    <appender-ref ref="CONSOLE" />
+    <appender-ref ref="ASYNC_FILE" />
+    <appender-ref ref="ERROR_FILE" />
+  </logger>
+
+  <!-- Spring Framework 로거 -->
+  <logger name="org.springframework" level="INFO" />
+
+  <!-- 루트 로거 -->
+  <root level="INFO">
+    <appender-ref ref="CONSOLE" />
+    <appender-ref ref="ASYNC_FILE" />
+    <appender-ref ref="ERROR_FILE" />
+  </root>
+</configuration>

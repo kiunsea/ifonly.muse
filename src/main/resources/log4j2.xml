@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Properties>
+        <Property name="LOG_DIR">logs</Property>
+        <Property name="LOG_FILE">muse-agent</Property>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5p %c{1.} - %msg%n</Property>
+        <Property name="LOG_PATTERN_JSON">{"timestamp":"%d{ISO8601}","level":"%p","thread":"%t","logger":"%c","message":"%msg","exception":"%rEx"}%n</Property>
+    </Properties>
+
+    <Appenders>
+        <!-- 콘솔 출력 -->
+        <Console name="ConsoleAppender" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}" />
+        </Console>
+
+        <!-- 파일 출력 (일반 로그) -->
+        <RollingFile name="FileAppender" fileName="${LOG_DIR}/${LOG_FILE}.log" filePattern="${LOG_DIR}/${LOG_FILE}-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}" />
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+                <SizeBasedTriggeringPolicy size="10MB" />
+            </Policies>
+            <DefaultRolloverStrategy max="30" fileIndex="min" />
+        </RollingFile>
+
+        <!-- 에러 로그 파일 -->
+        <RollingFile name="ErrorFileAppender" fileName="${LOG_DIR}/${LOG_FILE}-error.log" filePattern="${LOG_DIR}/${LOG_FILE}-error-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}" />
+            <Filters>
+                <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY" />
+            </Filters>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+                <SizeBasedTriggeringPolicy size="10MB" />
+            </Policies>
+            <DefaultRolloverStrategy max="30" fileIndex="min" />
+        </RollingFile>
+
+        <!-- 비동기 appender (성능 최적화) -->
+        <Async name="AsyncFileAppender" bufferSize="1024">
+            <AppenderRef ref="FileAppender" />
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <!-- Muse Agent 로거 -->
+        <Logger name="com.ifonly.museagent" level="debug" additivity="false">
+            <AppenderRef ref="ConsoleAppender" />
+            <AppenderRef ref="AsyncFileAppender" />
+            <AppenderRef ref="ErrorFileAppender" />
+        </Logger>
+
+        <!-- Echo Server 클라이언트 로거 -->
+        <Logger name="com.ifonly.museagent.client" level="info" additivity="false">
+            <AppenderRef ref="ConsoleAppender" />
+            <AppenderRef ref="AsyncFileAppender" />
+            <AppenderRef ref="ErrorFileAppender" />
+        </Logger>
+
+        <!-- 스케줄러 로거 -->
+        <Logger name="com.ifonly.museagent.scheduler" level="info" additivity="false">
+            <AppenderRef ref="ConsoleAppender" />
+            <AppenderRef ref="AsyncFileAppender" />
+            <AppenderRef ref="ErrorFileAppender" />
+        </Logger>
+
+        <!-- Spring Framework 로거 -->
+        <Logger name="org.springframework" level="info" />
+        <Logger name="org.springframework.boot" level="info" />
+        <Logger name="org.springframework.security" level="info" />
+        <Logger name="org.springframework.web" level="info" />
+
+        <!-- Spring Security OAuth2 로거 -->
+        <Logger name="org.springframework.security.oauth2" level="debug" />
+
+        <!-- 루트 로거 -->
+        <Root level="info">
+            <AppenderRef ref="ConsoleAppender" />
+            <AppenderRef ref="AsyncFileAppender" />
+            <AppenderRef ref="ErrorFileAppender" />
+        </Root>
+    </Loggers>
+</Configuration>

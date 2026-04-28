@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: muse-agent
+
+  messages:
+    basename: messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
+  datasource:
+    url: jdbc:sqlite:${DB_PATH:data/muse-agent.db}
+    driver-class-name: org.sqlite.JDBC
+
+  sql:
+    init:
+      mode: always
+
+server:
+  port: 8484
+  servlet:
+    context-path: /
+
+# Echo Server Configuration
+app:
+  muse-agent:
+    version: 1.4.0
+  cors:
+    # Echo Note popup s4_5 (보관 위치 선택) 가 사용자 브라우저에서 muse-agent 의
+    # /api/echo-note/health 를 ping 할 때 허용할 echo origin. 콤마 구분.
+    echo-origins: ${ECHO_CORS_ORIGINS:https://echo-server.omnibuscode.com,http://localhost:8080,http://localhost:8081}
+  echo-server:
+    url: https://echo-server.omnibuscode.com
+    client-id: soul-keeper-client
+    client-secret: soul-keeper-secret
+    api:
+      device-registration: /api/devices
+      alive-status: /api/alive/status
+      alive-history: /api/alive/history
+
+  scheduler:
+    alive-check:
+      interval-ms: 600000          # 10분
+      enabled: true                # 활성화 여부
+      execution-threshold-days: 7  # EXPIRED 지속 임계값 (일)
+
+  # Encryption Configuration
+  encryption:
+    key: ${ENCRYPTION_KEY:7x40MzRsY6FgM1R6t7S76yAdUvYiU+Il2wb1wUctVGY=}    # AES-256 암호화 키 (Base64 인코딩)
+
+  # Secure Config File
+  secure-config:
+    file: ${SECURE_CONFIG_FILE:data/secure-config.properties}
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.ifonly.museagent: DEBUG
+  file:
+    name: logs/muse-agent.log
+    max-size: 10MB
+    max-history: 30
+
+

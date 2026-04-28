@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{page.cleanup.title}">정리 경로 관리</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script>(function(){var t=localStorage.getItem('theme-preference');if(t)document.documentElement.dataset.theme=t;})()</script>
+    <link rel="stylesheet" th:href="@{/vendor/driverjs/driver.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/muse-agent.svg(v=${appVersion})}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico(v=${appVersion})}">
+    <style>
+        .path-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .path-table th, .path-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .path-table th { color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
+        .path-table td { font-size: 0.9rem; }
+        .path-table tr:hover { background-color: rgba(74, 144, 217, 0.05); }
+        .path-text { font-family: 'Consolas', monospace; word-break: break-all; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .badge-enabled { background-color: rgba(40, 167, 69, 0.2); color: var(--success-color); }
+        .badge-disabled { background-color: rgba(108, 117, 125, 0.2); color: var(--secondary-color); }
+        .badge-trash { background-color: rgba(220, 53, 69, 0.18); color: var(--danger-color); }
+        .badge-file { background-color: rgba(23, 162, 184, 0.2); color: var(--info-color); }
+        .badge-dir { background-color: rgba(255, 193, 7, 0.2); color: var(--warning-color); }
+        .badge-unknown { background-color: rgba(108, 117, 125, 0.2); color: var(--secondary-color); }
+        .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+        .btn-toggle { cursor: pointer; border: none; background: none; }
+        .action-group { display: flex; gap: 6px; }
+        .empty-state { text-align: center; padding: 40px; color: var(--text-secondary); }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        .summary-item { text-align: center; padding: 15px; background: rgba(74, 144, 217, 0.05); border-radius: 8px; }
+        .summary-item .number { font-size: 2rem; font-weight: 700; color: var(--primary-color); }
+        .summary-item .label { font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h1 class="service-title">
+                        <a href="/" class="service-title-brand">
+                            <img th:src="@{/img/muse-agent.svg(v=${appVersion})}" src="/img/muse-agent.svg" alt="Muse Agent" class="service-title-logo">
+                            <span>Muse Agent</span>
+                        </a>
+                        <span class="service-title-divider">/</span>
+                        <span th:text="#{page.cleanup.title}">정리 경로 관리</span>
+                    </h1>
+                    <p class="subtitle" th:text="#{page.cleanup.subtitle}">예약 정리를 위한 파일 및 디렉토리 경로 관리</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <button id="btnStartGuide" class="btn btn-outline btn-sm" type="button"
+                        th:attr="data-help-title=#{tour.muse.guide.title},data-help-desc=#{tour.muse.guide.desc}"
+                        th:text="#{nav.guide_start}">가이드 시작</button>
+                    <button id="btnHelpMode" class="btn btn-outline btn-sm btn-help-toggle" type="button" data-help-toggle="true"
+                        th:attr="data-label-show=#{page.help.toggle.show},data-label-hide=#{page.help.toggle.hide}"
+                        th:text="#{page.help.toggle.show}">도움말 보기</button>
+                    <div class="lang-switcher">
+                        <a th:href="@{''(lang='ko')}" th:classappend="${#locale.language == 'ko'} ? ' active' : ''" th:text="#{nav.lang.ko}">한국어</a>
+                        <a th:href="@{''(lang='en')}" th:classappend="${#locale.language == 'en'} ? ' active' : ''" th:text="#{nav.lang.en}">EN</a>
+                        <a th:href="@{''(lang='ja')}" th:classappend="${#locale.language == 'ja'} ? ' active' : ''" th:text="#{nav.lang.ja}">日本語</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Summary -->
+            <section class="card" id="cleanupSummarySection"
+                th:attr="data-help-title=#{help.cleanup.summary.title},data-help-desc=#{help.cleanup.summary.desc},data-help-placement='bottom'">
+                <h2 th:text="#{page.cleanup.section.summary}">요약</h2>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="number" id="totalCount" th:text="${#lists.size(cleanupPaths)}">0</div>
+                        <div class="label" th:text="#{page.cleanup.label.total_paths}">전체 경로</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="number" id="enabledCount" th:text="${enabledCount}">0</div>
+                        <div class="label" th:text="#{page.cleanup.label.enabled}">활성화</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Path List -->
+            <section class="card" id="cleanupPathsSection"
+                th:attr="data-help-title=#{help.cleanup.paths.title},data-help-desc=#{help.cleanup.paths.desc},data-help-placement='bottom'">
+                <h2 th:text="#{page.cleanup.section.paths}">등록된 경로</h2>
+                <div id="pathListContainer">
+                    <table class="path-table" th:if="${!#lists.isEmpty(cleanupPaths)}">
+                        <thead>
+                            <tr>
+                                <th th:text="#{page.cleanup.col.path}">경로</th>
+                                <th th:text="#{page.cleanup.col.description}">설명</th>
+                                <th th:text="#{page.cleanup.col.type}">유형</th>
+                                <th th:text="#{page.cleanup.col.status}">상태</th>
+                                <th th:text="#{page.cleanup.col.actions}">작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pathTableBody">
+                            <tr th:each="p : ${cleanupPaths}">
+                                <td class="path-text" th:text="${p.path}"></td>
+                                <td th:text="${p.description ?: '-'}"></td>
+                                <td>
+                                    <span class="badge" th:classappend="${p.pathType == 'FILE'} ? 'badge-file' : (${p.pathType == 'DIRECTORY'} ? 'badge-dir' : 'badge-unknown')" th:text="${p.pathType}"></span>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                        th:classappend="${p.cleanupStatus == 'TRASH'} ? 'badge-trash' : (${p.cleanupStatus == 'ENABLED'} ? 'badge-enabled' : 'badge-disabled')"
+                                        th:text="${p.cleanupStatus == 'TRASH'} ? #{page.cleanup.badge.trash} : (${p.cleanupStatus == 'ENABLED'} ? #{page.cleanup.badge.enabled} : #{page.cleanup.badge.disabled})"></span>
+                                </td>
+                                <td>
+                                    <div class="action-group">
+                                        <button class="btn btn-sm" th:classappend="${p.enabled} ? 'btn-secondary' : 'btn-primary'" th:onclick="'togglePath(' + ${p.id} + ')'" th:text="${p.enabled} ? #{page.cleanup.btn.disable} : #{page.cleanup.btn.enable}"></button>
+                                        <button class="btn btn-sm btn-danger" th:onclick="'deletePath(' + ${p.id} + ')'" th:text="#{page.cleanup.btn.delete}">삭제</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="empty-state" th:if="${#lists.isEmpty(cleanupPaths)}">
+                        <p th:text="#{page.cleanup.empty.title}">등록된 정리 경로가 없습니다.</p>
+                        <p style="margin-top: 8px; font-size: 0.9rem;" th:text="#{page.cleanup.empty.subtitle}">아래에서 경로를 추가하세요.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Add New Path -->
+            <section class="card" id="addPathSection"
+                th:attr="data-help-title=#{help.cleanup.add.title},data-help-desc=#{help.cleanup.add.desc},data-help-placement='bottom'">
+                <h2 th:text="#{page.cleanup.section.add}">새 경로 추가</h2>
+                <form id="addPathForm" class="form-container" onsubmit="event.preventDefault(); addPath();">
+                    <div class="form-group">
+                        <label for="newPath" class="form-label" th:text="#{page.cleanup.label.path}">경로 *</label>
+                        <input type="text" id="newPath" class="form-input" th:placeholder="#{page.cleanup.ph.path}" required
+                            th:attr="data-help-title=#{help.cleanup.path_input.title},data-help-desc=#{help.cleanup.path_input.desc},data-help-placement='right'">
+                        <small class="form-help" th:text="#{page.cleanup.help.path}">정리할 파일 또는 디렉토리의 절대 경로</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="newDescription" class="form-label" th:text="#{page.cleanup.label.description}">설명</label>
+                        <input type="text" id="newDescription" class="form-input" th:placeholder="#{page.cleanup.ph.description}"
+                            th:attr="data-help-title=#{help.cleanup.description_input.title},data-help-desc=#{help.cleanup.description_input.desc},data-help-placement='right'">
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" id="btnAdd" class="btn btn-primary"
+                            th:attr="data-help-title=#{help.cleanup.add_submit.title},data-help-desc=#{help.cleanup.add_submit.desc},data-help-placement='top'"
+                            th:text="#{page.cleanup.btn.add}">경로 추가</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Verify Paths -->
+            <section class="card" id="verifyPathsSection"
+                th:attr="data-help-title=#{help.cleanup.verify.title},data-help-desc=#{help.cleanup.verify.desc},data-help-placement='bottom'">
+                <h2 th:text="#{page.cleanup.section.verify}">경로 확인</h2>
+                <p style="margin-bottom: 15px; color: var(--text-secondary);" th:text="#{page.cleanup.msg.verify}">
+                    활성화된 모든 경로가 접근 및 쓰기 가능한지 확인합니다.
+                </p>
+                <button class="btn btn-info" id="btnVerify" onclick="verifyPaths()"
+                    th:attr="data-help-title=#{help.cleanup.verify_btn.title},data-help-desc=#{help.cleanup.verify_btn.desc},data-help-placement='top'"
+                    th:text="#{page.cleanup.btn.verify}">활성 경로 확인</button>
+                <div id="verifyResult" style="margin-top: 15px;" class="hidden"></div>
+            </section>
+
+            <!-- Cleanup Trash Settings -->
+            <section class="card" id="trashSettingsSection"
+                th:attr="data-help-title=#{help.cleanup.trash.title},data-help-desc=#{help.cleanup.trash.desc},data-help-placement='bottom'">
+                <h2 th:text="#{page.cleanup.section.trash}">휴지통 보관 설정</h2>
+                <p style="margin-bottom: 15px; color: var(--text-secondary);" th:text="#{page.cleanup.msg.trash}">
+                    파일 정리 시 즉시 삭제하지 않고 휴지통에 보관한 뒤 만료 시 삭제합니다.
+                </p>
+                <form id="trashSettingsForm" class="form-container" onsubmit="event.preventDefault(); saveTrashSettings();">
+                    <div class="form-group">
+                        <label for="trashRetentionDays" class="form-label" th:text="#{page.cleanup.label.trash_retention_days}">휴지통 보관 기간 (일)</label>
+                        <input type="number" id="trashRetentionDays" class="form-input" min="1" step="1" required
+                            th:attr="data-help-title=#{help.cleanup.retention_input.title},data-help-desc=#{help.cleanup.retention_input.desc},data-help-placement='right'">
+                    </div>
+                    <div class="form-group">
+                        <label for="trashRootPath" class="form-label" th:text="#{page.cleanup.label.trash_root_path}">휴지통 루트 경로</label>
+                        <input type="text" id="trashRootPath" class="form-input" required
+                            th:attr="data-help-title=#{help.cleanup.root_input.title},data-help-desc=#{help.cleanup.root_input.desc},data-help-placement='right'">
+                    </div>
+                    <div class="form-group">
+                        <label for="trashPurgeBatchSize" class="form-label" th:text="#{page.cleanup.label.trash_purge_batch}">만료 삭제 배치 크기</label>
+                        <input type="number" id="trashPurgeBatchSize" class="form-input" min="1" step="1" required
+                            th:attr="data-help-title=#{help.cleanup.batch_input.title},data-help-desc=#{help.cleanup.batch_input.desc},data-help-placement='right'">
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" id="btnSaveTrashSettings" class="btn btn-primary"
+                            th:attr="data-help-title=#{help.cleanup.save_trash.title},data-help-desc=#{help.cleanup.save_trash.desc},data-help-placement='top'"
+                            th:text="#{page.cleanup.btn.save_trash_settings}">휴지통 설정 저장</button>
+                        <button type="button" id="btnPurgeTrashNow" class="btn btn-danger" onclick="purgeTrashNow()"
+                            th:attr="data-help-title=#{help.cleanup.purge_now.title},data-help-desc=#{help.cleanup.purge_now.desc}"
+                            th:text="#{page.cleanup.btn.purge_now}">만료 항목 즉시 삭제</button>
+                    </div>
+                </form>
+                <div id="trashStats" style="margin-top: 16px; color: var(--text-secondary);"></div>
+                <div style="margin-top: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <label for="trashStatusFilter" class="form-label" style="margin: 0;" th:text="#{page.cleanup.label.trash_status_filter}">상태 필터</label>
+                        <select id="trashStatusFilter" class="form-input" style="max-width: 220px;" onchange="loadTrashItems()"
+                            th:attr="data-help-title=#{help.cleanup.status_filter.title},data-help-desc=#{help.cleanup.status_filter.desc},data-help-placement='right'">
+                            <option value="" th:text="#{page.cleanup.filter.all}">전체</option>
+                            <option value="MOVED">MOVED</option>
+                            <option value="DELETE_FAILED">DELETE_FAILED</option>
+                            <option value="RESTORED">RESTORED</option>
+                            <option value="DELETED">DELETED</option>
+                        </select>
+                    </div>
+                    <div id="trashItemsContainer"></div>
+                </div>
+            </section>
+
+            <!-- Result Section -->
+            <section class="card hidden" id="resultSection">
+                <div id="resultContent" class="result-content"></div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="button-group" style="justify-content: center;">
+                <a href="/" class="btn btn-secondary" th:text="#{page.cleanup.btn.back}">대시보드로</a>
+            </div>
+            <p style="text-align: center; margin-top: 15px;">&copy; 2026 if-only Project. Muse Agent v<span th:text="${appVersion}">0.0.0</span></p>
+        </footer>
+    </div>
+
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    const I18N = {
+        noPath: /*[[#{page.cleanup.js.no_path}]]*/ '경로를 입력하세요',
+        pathAdded: /*[[#{page.cleanup.js.path_added}]]*/ '경로가 추가되었습니다',
+        pathDeleted: /*[[#{page.cleanup.js.path_deleted}]]*/ '경로가 삭제되었습니다',
+        confirmDelete: /*[[#{page.cleanup.js.confirm_delete}]]*/ '이 정리 경로를 삭제하시겠습니까?',
+        processing: /*[[#{page.cleanup.js.processing}]]*/ '처리 중...',
+        yes: /*[[#{page.cleanup.js.yes}]]*/ '예',
+        no: /*[[#{page.cleanup.js.no}]]*/ '아니오',
+        trashSettingsSaved: /*[[#{page.cleanup.js.trash_settings_saved}]]*/ '휴지통 설정이 저장되었습니다',
+        trashStatsTitle: /*[[#{page.cleanup.js.trash_stats_title}]]*/ '휴지통 현황',
+        trashMovedCount: /*[[#{page.cleanup.js.trash_moved_count}]]*/ '보관중',
+        trashDeletedCount: /*[[#{page.cleanup.js.trash_deleted_count}]]*/ '삭제완료',
+        trashFailedCount: /*[[#{page.cleanup.js.trash_failed_count}]]*/ '삭제실패',
+        trashPurgeCandidates: /*[[#{page.cleanup.js.trash_purge_candidates}]]*/ '만료대상',
+        trashRetentionDays: /*[[#{page.cleanup.js.trash_retention_days}]]*/ '보관기간(일)',
+        trashRootPath: /*[[#{page.cleanup.js.trash_root_path}]]*/ '루트경로',
+        trashItemsTitle: /*[[#{page.cleanup.js.trash_items_title}]]*/ '휴지통 항목',
+        trashNoItems: /*[[#{page.cleanup.js.trash_no_items}]]*/ '조회된 휴지통 항목이 없습니다',
+        trashColOriginalPath: /*[[#{page.cleanup.js.trash_col_original_path}]]*/ '원래 경로',
+        trashColTrashPath: /*[[#{page.cleanup.js.trash_col_trash_path}]]*/ '휴지통 경로',
+        trashColStatus: /*[[#{page.cleanup.js.trash_col_status}]]*/ '상태',
+        trashColMovedAt: /*[[#{page.cleanup.js.trash_col_moved_at}]]*/ '이동 시각',
+        trashColExpireAt: /*[[#{page.cleanup.js.trash_col_expire_at}]]*/ '만료 시각',
+        trashColError: /*[[#{page.cleanup.js.trash_col_error}]]*/ '오류',
+        trashColAction: /*[[#{page.cleanup.js.trash_col_action}]]*/ '작업',
+        trashRestore: /*[[#{page.cleanup.js.trash_restore}]]*/ '복원',
+        trashRestoreDone: /*[[#{page.cleanup.js.trash_restore_done}]]*/ '휴지통 항목이 복원되었습니다',
+        trashRestoreConfirm: /*[[#{page.cleanup.js.trash_restore_confirm}]]*/ '이 휴지통 항목을 원래 경로로 복원하시겠습니까?',
+        trashRestoredCount: /*[[#{page.cleanup.js.trash_restored_count}]]*/ '복원완료',
+        trashPurgeDone: /*[[#{page.cleanup.js.trash_purge_done}]]*/ '휴지통 만료 삭제가 완료되었습니다'
+    };
+    window.MUSE_TOUR_I18N = {
+        guideTitle: /*[[#{tour.muse.guide.title}]]*/ '가이드 다시 보기',
+        guideDesc: /*[[#{tour.muse.guide.desc}]]*/ '언제든 이 버튼으로 투어를 다시 시작할 수 있습니다.',
+        cleanupPageTitle: /*[[#{tour.muse.cleanup_page.title}]]*/ '정리 경로 관리 화면',
+        cleanupPageDesc: /*[[#{tour.muse.cleanup_page.desc}]]*/ '자동 정리 대상 경로와 휴지통 보관 설정을 관리합니다.',
+        cleanupSummaryTitle: /*[[#{tour.muse.cleanup_summary.title}]]*/ '정리 요약',
+        cleanupSummaryDesc: /*[[#{tour.muse.cleanup_summary.desc}]]*/ '등록된 경로 수와 활성화 상태를 빠르게 확인합니다.',
+        cleanupPathsTitle: /*[[#{tour.muse.cleanup_paths.title}]]*/ '등록된 경로 목록',
+        cleanupPathsDesc: /*[[#{tour.muse.cleanup_paths.desc}]]*/ '자동 정리 대상 경로를 확인하고 활성화 또는 삭제할 수 있습니다.',
+        cleanupAddTitle: /*[[#{tour.muse.cleanup_add.title}]]*/ '새 경로 추가',
+        cleanupAddDesc: /*[[#{tour.muse.cleanup_add.desc}]]*/ '정리할 파일 또는 디렉토리의 절대 경로를 새로 등록합니다.',
+        cleanupVerifyTitle: /*[[#{tour.muse.cleanup_verify.title}]]*/ '경로 검증',
+        cleanupVerifyDesc: /*[[#{tour.muse.cleanup_verify.desc}]]*/ '활성화된 경로가 현재 접근 가능한지 미리 검증합니다.',
+        cleanupTrashTitle: /*[[#{tour.muse.cleanup_trash.title}]]*/ '휴지통 설정',
+        cleanupTrashDesc: /*[[#{tour.muse.cleanup_trash.desc}]]*/ '보관 기간, 휴지통 위치, 만료 삭제 배치를 조정합니다.'
+    };
+    /*]]>*/
+    </script>
+    <script th:src="@{/js/cleanup.js}"></script>
+    <script th:src="@{/vendor/driverjs/driver.js.iife.js}"></script>
+    <script th:src="@{/js/onboarding-tour.js}"></script>
+    <script th:src="@{/js/context-help.js}"></script>
+</body>
+</html>

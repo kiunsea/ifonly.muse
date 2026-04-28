@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{page.echo_config.title}">Echo Server 연결</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script>(function(){var t=localStorage.getItem('theme-preference');if(t)document.documentElement.dataset.theme=t;})()</script>
+    <link rel="stylesheet" th:href="@{/vendor/driverjs/driver.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/muse-agent.svg(v=${appVersion})}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico(v=${appVersion})}">
+    <style>
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .badge-ready { background-color: rgba(40, 167, 69, 0.2); color: var(--success-color); }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        .summary-item { text-align: center; padding: 15px; background: rgba(74, 144, 217, 0.05); border-radius: 8px; }
+        .summary-item .number { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); }
+        .summary-item .label { font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px; }
+        .result-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); }
+        .result-item .label { color: var(--text-secondary); }
+        .result-item .value { font-weight: 600; }
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .info-item { padding: 12px; background: rgba(74, 144, 217, 0.05); border-radius: 6px; }
+        .info-item .label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px; }
+        .info-item .value { display: block; font-size: 1rem; color: var(--text-primary); font-weight: 500; word-break: break-all; }
+        .info-item.full-width { grid-column: 1 / -1; }
+        .test-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+        .test-result { margin-top: 20px; padding: 15px; background: rgba(23, 162, 184, 0.05); border-radius: 6px; border-left: 4px solid var(--info-color); }
+        .test-result h3 { margin-top: 0; color: var(--primary-color); }
+        .test-result pre { background: var(--card-bg); padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; }
+        /* credential import */
+        .import-field { display: flex; flex-direction: column; gap: 4px; }
+        .import-field label { font-size: 0.85rem; color: var(--text-secondary); }
+        .import-field input { padding: 8px 12px; background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.88rem; font-family: Consolas, monospace; }
+        .import-textarea { width: 100%; padding: 10px; background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.85rem; font-family: Consolas, monospace; resize: vertical; min-height: 80px; box-sizing: border-box; }
+        .import-result { margin-top: 12px; padding: 10px 14px; border-radius: 6px; font-size: 0.88rem; display: none; }
+        .import-result.success { background: rgba(40,167,69,0.12); color: var(--success-color); border: 1px solid rgba(40,167,69,0.3); }
+        .import-result.error   { background: rgba(220,53,69,0.12);  color: var(--danger-color);  border: 1px solid rgba(220,53,69,0.3); }
+        .saved-badge { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 0.78rem; font-weight: 600; background: rgba(40,167,69,0.2); color: var(--success-color); margin-left: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h1 class="service-title">
+                        <a href="/" class="service-title-brand">
+                            <img th:src="@{/img/muse-agent.svg(v=${appVersion})}" src="/img/muse-agent.svg" alt="Muse Agent" class="service-title-logo">
+                            <span>Muse Agent</span>
+                        </a>
+                        <span class="service-title-divider">/</span>
+                        <span th:text="#{page.echo_config.title}">Echo Server 연결</span>
+                    </h1>
+                    <p class="subtitle" th:text="#{page.echo_config.subtitle}">Echo Server 연결 정보 확인 및 Alive-Check 설정 관리</p>
+                </div>
+                <div class="lang-switcher" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button id="btnStartGuide" class="btn btn-outline btn-sm" type="button" style="margin-right: 8px;"
+                        th:attr="data-help-title=#{tour.muse.guide.title},data-help-desc=#{tour.muse.guide.desc},data-help-placement='bottom'"
+                        th:text="#{nav.guide_start}">가이드 시작</button>
+                    <button id="btnHelpMode" class="btn btn-outline btn-sm btn-help-toggle" type="button" data-help-toggle="true"
+                        th:attr="data-label-show=#{page.help.toggle.show},data-label-hide=#{page.help.toggle.hide}"
+                        th:text="#{page.help.toggle.show}">도움말 보기</button>
+                    <a th:href="@{''(lang='ko')}" th:classappend="${#locale.language == 'ko'} ? ' active' : ''" th:text="#{nav.lang.ko}">한국어</a>
+                    <a th:href="@{''(lang='en')}" th:classappend="${#locale.language == 'en'} ? ' active' : ''" th:text="#{nav.lang.en}">EN</a>
+                    <a th:href="@{''(lang='ja')}" th:classappend="${#locale.language == 'ja'} ? ' active' : ''" th:text="#{nav.lang.ja}">日本語</a>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Echo Server Configuration -->
+            <section id="echoConnectionInfoSection" class="card"
+                th:attr="data-help-title=#{tour.muse.echo_page.title},data-help-desc=#{tour.muse.echo_page.desc},data-help-placement='bottom'">
+                <h2 th:text="#{page.echo_config.section.connection_info}">Echo Server 연결 정보</h2>
+                <div class="info-grid">
+                    <div class="info-item full-width">
+                        <span class="label" th:text="#{page.dashboard.label.echo_url}">Echo Server URL</span>
+                        <span class="value">
+                            <a class="value-link" th:href="${echoServerUrl}" th:text="${echoServerUrl}" target="_blank" rel="noopener noreferrer">https://echo-server.omnibuscode.com</a>
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label" th:text="#{page.dashboard.label.client_id}">클라이언트 ID</span>
+                        <span class="value" th:text="${echoServerClientId}">soul-keeper-client</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label" th:text="#{page.dashboard.label.alive_status_api}">생존 상태 API</span>
+                        <span class="value">/api/alive/status</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Credential Import from Echo Server -->
+            <section id="echoCredentialSection" class="card"
+                th:attr="data-help-title=#{tour.muse.credential.title},data-help-desc=#{tour.muse.credential.desc},data-help-placement='bottom'">
+                <h2><span th:text="#{page.echo_config.section.connect}">Echo Server 연결하기</span>
+                    <span id="savedBadge" class="saved-badge" style="display:none;">저장됨</span>
+                </h2>
+                <p style="margin-bottom: 14px; color: var(--text-secondary); font-size: 0.9rem;">
+                    Echo Server의 <strong>Muse Agent &gt; 자격증명</strong> 페이지에서 발급한 연결 정보를 붙여넣거나,
+                    아래 필드에 직접 입력하세요. 저장 후 에이전트를 재시작하면 새 연결 정보가 적용됩니다.
+                </p>
+
+                <!-- Paste env template -->
+                <div style="margin-bottom: 14px;">
+                    <label style="display:block; font-size:0.85rem; color:var(--text-secondary); margin-bottom:6px;">
+                        연결 정보 붙여넣기 (ECHO_SERVER_URL=... 형식)
+                    </label>
+                        <textarea id="envPasteArea" class="import-textarea"
+                            th:attr="data-help-title=#{tour.muse.env.title},data-help-desc=#{tour.muse.env.desc},data-help-placement='bottom'"
+                              placeholder="ECHO_SERVER_URL=https://...\nECHO_SERVER_CLIENT_ID=muse-...\nECHO_SERVER_CLIENT_SECRET=..."></textarea>
+                        <button id="btnParseEnv" class="btn btn-outline" style="margin-top:8px; font-size:0.85rem;"
+                            th:attr="data-help-title=#{help.echo.parse.title},data-help-desc=#{help.echo.parse.desc},data-help-placement='top'"
+                            onclick="parseEnvString()">입력값 채우기</button>
+                </div>
+
+                <!-- Manual fields -->
+                <div style="display:flex; flex-direction:column; gap:12px; max-width:520px;">
+                    <div class="import-field">
+                        <label for="inputEchoUrl">Echo Server URL</label>
+                           <input type="url" id="inputEchoUrl"
+                               th:attr="data-help-title=#{help.echo.url.title},data-help-desc=#{help.echo.url.desc},data-help-placement='right'"
+                               placeholder="https://echo-server.example.com"/>
+                    </div>
+                    <div class="import-field">
+                        <label for="inputClientId">Client ID</label>
+                           <input type="text" id="inputClientId"
+                               th:attr="data-help-title=#{help.echo.client_id.title},data-help-desc=#{help.echo.client_id.desc},data-help-placement='right'"
+                               placeholder="muse-1-xxxxxxxxxxxx"/>
+                    </div>
+                    <div class="import-field">
+                        <label for="inputClientSecret">Client Secret</label>
+                           <input type="password" id="inputClientSecret"
+                               th:attr="data-help-title=#{help.echo.client_secret.title},data-help-desc=#{help.echo.client_secret.desc},data-help-placement='right'"
+                               placeholder="발급 시 한 번만 표시되는 secret"/>
+                    </div>
+                </div>
+                <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+                        <button id="btnSaveEchoCredentials" class="btn btn-primary"
+                            th:attr="data-help-title=#{help.echo.save.title},data-help-desc=#{help.echo.save.desc},data-help-placement='top'"
+                            onclick="saveEchoCredentials()">저장 후 연결 테스트</button>
+                        <button id="btnTestEchoCredentials" class="btn btn-secondary"
+                            th:attr="data-help-title=#{help.echo.test_input.title},data-help-desc=#{help.echo.test_input.desc},data-help-placement='top'"
+                            onclick="testEchoCredentialsOnly()">입력값으로 연결 테스트</button>
+                        <button id="btnLoadSavedCredentials" class="btn btn-outline"
+                            th:attr="data-help-title=#{help.echo.load_saved.title},data-help-desc=#{help.echo.load_saved.desc},data-help-placement='top'"
+                            onclick="loadSavedCredentials()">저장된 연결 정보 불러오기</button>
+                </div>
+                <div id="importResult" class="import-result"></div>
+                <!-- 저장 성공 후 재시작 안내 -->
+                <div id="restartGuide" style="display:none; margin-top:16px; padding:14px 16px; border-radius:8px;
+                     background:rgba(255,193,7,0.1); border:1px solid rgba(255,193,7,0.4); color:var(--text-primary);">
+                    <strong style="color:#f0b400;">&#9888; 에이전트 재시작 필요</strong>
+                    <p style="margin:8px 0 6px; font-size:0.9rem;">
+                        OAuth2 토큰 발급 설정(URL / Client ID / Secret)은 재시작 후 적용됩니다.
+                    </p>
+                    <div id="restartGuideWindows" style="display:none;">
+                        <p style="margin:4px 0 6px; font-size:0.88rem; color:var(--text-secondary);">Windows 서비스로 실행 중인 경우 — <em>관리자 권한 명령 프롬프트</em>에서:</p>
+                        <pre style="background:var(--card-bg); padding:10px 14px; border-radius:6px; font-size:0.84rem; margin:4px 0 8px; overflow-x:auto;">sc stop muse-agent &amp;&amp; sc start muse-agent</pre>
+                        <p style="margin:0 0 4px; font-size:0.88rem; color:var(--text-secondary);">또는 WinSW 설치 폴더에서:</p>
+                        <pre style="background:var(--card-bg); padding:10px 14px; border-radius:6px; font-size:0.84rem; margin:4px 0; overflow-x:auto;">muse-agent-service.exe restart</pre>
+                        <p style="margin:6px 0 0; font-size:0.88rem; color:var(--text-secondary);">서비스가 아닌 일반 실행이라면 실행 중인 muse-agent 창을 닫고 배치 파일로 재시작하세요.</p>
+                    </div>
+                    <div id="restartGuideOther" style="display:none;">
+                        <p style="margin:4px 0 0; font-size:0.88rem; color:var(--text-secondary);">실행 중인 muse-agent 프로세스를 종료 후 재시작하세요.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Echo Server Communication Test -->
+            <section id="echoCommTestSection" class="card"
+                th:attr="data-help-title=#{tour.muse.full_test.title},data-help-desc=#{tour.muse.full_test.desc},data-help-placement='bottom'">
+                <h2 th:text="#{page.dashboard.section.comm_test}">Echo Server 통신 테스트</h2>
+                <div class="test-buttons">
+                    <button id="btnTestConnection" class="btn btn-primary" onclick="testConnection()"
+                            th:attr="data-help-title=#{tour.muse.full_test.title},data-help-desc=#{tour.muse.full_test.desc},data-help-placement='top'"
+                            th:text="#{page.dashboard.btn.test_all}">
+                        전체 연결 테스트
+                    </button>
+                </div>
+
+                <div id="testResult" class="test-result hidden">
+                    <h3 th:text="#{page.dashboard.label.test_result}">테스트 결과</h3>
+                    <pre id="resultContent"></pre>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px;">
+                <a href="/" class="btn btn-secondary" th:text="#{page.schedule.btn.back}">대시보드로</a>
+            </div>
+            <p style="text-align: center; margin: 0;">&copy; 2026 if-only Project. Muse Agent v<span th:text="${appVersion}">0.0.0</span></p>
+        </footer>
+    </div>
+
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    const I18N = {
+        testing: /*[[#{page.dashboard.js.testing}]]*/ '테스트 중...',
+        connected: /*[[#{page.dashboard.js.connected}]]*/ '연결됨',
+        failed: /*[[#{page.dashboard.js.failed}]]*/ '실패',
+        overallStatus: /*[[#{page.dashboard.js.overall_status}]]*/ '전체 상태',
+        lastTest: /*[[#{page.dashboard.js.last_test}]]*/ '마지막 테스트',
+    };
+    const IS_WINDOWS = /*[[${isWindows}]]*/ false;
+
+    window.MUSE_TOUR_I18N = {
+        dashboardTitle: /*[[#{tour.muse.dashboard.title}]]*/ 'Muse Agent 대시보드',
+        dashboardDesc: /*[[#{tour.muse.dashboard.desc}]]*/ '로컬 에이전트 상태, 스케줄, 디바이스를 한 번에 관리합니다.',
+        statusTitle: /*[[#{tour.muse.status.title}]]*/ '현재 상태',
+        statusDesc: /*[[#{tour.muse.status.desc}]]*/ 'Echo Server 연동 결과와 연결 상태를 확인합니다.',
+        aliveTitle: /*[[#{tour.muse.alive.title}]]*/ '생존 신호 상태',
+        aliveDesc: /*[[#{tour.muse.alive.desc}]]*/ '생존 상태와 최근 이벤트를 점검할 수 있습니다.',
+        taskTitle: /*[[#{tour.muse.task.title}]]*/ '작업 관리',
+        taskDesc: /*[[#{tour.muse.task.desc}]]*/ '정리 경로와 실행 작업을 관리합니다.',
+        echoConfigTitle: /*[[#{tour.muse.echo_config.title}]]*/ 'Echo Server 설정',
+        echoConfigDesc: /*[[#{tour.muse.echo_config.desc}]]*/ '연결 정보와 Alive-Check 설정을 조정합니다.',
+        deviceTitle: /*[[#{tour.muse.device.title}]]*/ '디바이스 등록',
+        deviceDesc: /*[[#{tour.muse.device.desc}]]*/ '디바이스를 등록해 Echo Server 연계를 활성화합니다.',
+        guideTitle: /*[[#{tour.muse.guide.title}]]*/ '가이드 다시 보기',
+        guideDesc: /*[[#{tour.muse.guide.desc}]]*/ '언제든 이 버튼으로 투어를 다시 시작할 수 있습니다.',
+        echoPageTitle: /*[[#{tour.muse.echo_page.title}]]*/ 'Echo Server 설정 화면',
+        echoPageDesc: /*[[#{tour.muse.echo_page.desc}]]*/ '연결 정보 입력, 테스트, Alive-Check 주기 설정을 수행합니다.',
+        envTitle: /*[[#{tour.muse.env.title}]]*/ '설정 문자열 붙여넣기',
+        envDesc: /*[[#{tour.muse.env.desc}]]*/ '발급받은 설정 문자열을 붙여넣고 자동 파싱할 수 있습니다.',
+        credentialTitle: /*[[#{tour.muse.credential.title}]]*/ '연결 정보 입력',
+        credentialDesc: /*[[#{tour.muse.credential.desc}]]*/ 'URL, Client ID, Client Secret을 입력합니다.',
+        saveTestTitle: /*[[#{tour.muse.save_test.title}]]*/ '저장 및 테스트',
+        saveTestDesc: /*[[#{tour.muse.save_test.desc}]]*/ '입력값 저장 후 즉시 연결 테스트를 실행합니다.',
+        intervalTitle: /*[[#{tour.muse.interval.title}]]*/ 'Alive-Check 주기',
+        intervalDesc: /*[[#{tour.muse.interval.desc}]]*/ '폴링 주기와 임계 일수를 조절해 자동 실행 민감도를 설정합니다.',
+        fullTestTitle: /*[[#{tour.muse.full_test.title}]]*/ '전체 연결 테스트',
+        fullTestDesc: /*[[#{tour.muse.full_test.desc}]]*/ '현재 설정 기준으로 통신 상태를 검증합니다.'
+    };
+
+    function setButtonLoading(btn, loading) {
+        if (!btn) return;
+        if (loading) {
+            btn.disabled = true;
+            btn.dataset.originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="loading"></span> ' + I18N.testing;
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = btn.dataset.originalText;
+        }
+    }
+
+    function showResult(content, isError = false) {
+        const resultDiv = document.getElementById('testResult');
+        const resultContent = document.getElementById('resultContent');
+        if (!resultDiv || !resultContent) return;
+
+        resultDiv.classList.remove('hidden');
+        resultContent.textContent = content;
+        resultContent.style.color = isError ? '#dc3545' : '#e0e0e0';
+    }
+
+    async function testConnection() {
+        const btn = document.getElementById('btnTestConnection');
+        setButtonLoading(btn, true);
+        showResult(I18N.testing);
+
+        try {
+            const response = await fetch('/api/test/connection');
+            const data = await response.json();
+            showResult(JSON.stringify(data, null, 2), !data.overallSuccess);
+        } catch (error) {
+            showResult('Error: ' + error.message, true);
+        } finally {
+            setButtonLoading(btn, false);
+        }
+    }
+
+    function showImportResult(message, ok) {
+        const el = document.getElementById('importResult');
+        if (!el) return;
+        el.textContent = message;
+        el.className = 'import-result ' + (ok ? 'success' : 'error');
+        el.style.display = 'block';
+    }
+
+    function parseEnvString() {
+        const src = document.getElementById('envPasteArea').value || '';
+        const lines = src.split(/\r?\n/);
+        const parsed = {};
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#')) return;
+            const idx = trimmed.indexOf('=');
+            if (idx <= 0) return;
+            const key = trimmed.substring(0, idx).trim();
+            const value = trimmed.substring(idx + 1).trim();
+            parsed[key] = value;
+        });
+
+        if (parsed.ECHO_SERVER_URL) {
+            document.getElementById('inputEchoUrl').value = parsed.ECHO_SERVER_URL;
+        }
+        if (parsed.ECHO_SERVER_CLIENT_ID) {
+            document.getElementById('inputClientId').value = parsed.ECHO_SERVER_CLIENT_ID;
+        }
+        if (parsed.ECHO_SERVER_CLIENT_SECRET) {
+            document.getElementById('inputClientSecret').value = parsed.ECHO_SERVER_CLIENT_SECRET;
+        }
+
+        showImportResult('설정 문자열을 파싱했습니다.', true);
+    }
+
+    async function loadSavedCredentials() {
+        try {
+            const resp = await fetch('/api/settings/echo-credentials');
+            const data = await resp.json();
+            if (!data.success) {
+                showImportResult(data.message || '저장된 값을 불러오지 못했습니다.', false);
+                return;
+            }
+            document.getElementById('inputEchoUrl').value = data.url || '';
+            document.getElementById('inputClientId').value = data.clientId || '';
+            document.getElementById('inputClientSecret').value = '';
+            const savedBadge = document.getElementById('savedBadge');
+            if (savedBadge) {
+                savedBadge.style.display = data.saved ? 'inline-block' : 'none';
+            }
+            if (data.clientSecretSaved) {
+                showImportResult('저장된 URL/Client ID를 불러왔습니다. secret은 보안상 다시 입력해주세요.', true);
+            } else {
+                showImportResult('현재 저장된 secret이 없습니다. 새로 입력 후 저장해주세요.', false);
+            }
+        } catch (e) {
+            showImportResult('불러오기 실패: ' + e.message, false);
+        }
+    }
+
+    async function saveEchoCredentials() {
+        const url = (document.getElementById('inputEchoUrl').value || '').trim();
+        const clientId = (document.getElementById('inputClientId').value || '').trim();
+        const clientSecret = (document.getElementById('inputClientSecret').value || '').trim();
+
+        if (!url) {
+            showImportResult('URL은 필수 입력값입니다.', false);
+            return;
+        }
+
+        if ((clientId && !clientSecret) || (!clientId && clientSecret)) {
+            showImportResult('Client ID/Client Secret은 둘 다 입력하거나 둘 다 비워두세요.', false);
+            return;
+        }
+
+        try {
+            const resp = await fetch('/api/settings/echo-credentials', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, clientId, clientSecret })
+            });
+            const data = await resp.json();
+            if (!data.success) {
+                showImportResult(data.message || '저장/테스트 실패', false);
+                return;
+            }
+            const savedBadge = document.getElementById('savedBadge');
+            if (savedBadge) savedBadge.style.display = 'inline-block';
+            showImportResult(data.message + ' (응답 시간: ' + (data.responseTime || 'N/A') + ')', true);
+            showRestartGuide();
+        } catch (e) {
+            showImportResult('저장 실패: ' + e.message, false);
+        }
+    }
+
+    function showRestartGuide() {
+        const guide = document.getElementById('restartGuide');
+        if (!guide) return;
+        guide.style.display = 'block';
+        const winEl  = document.getElementById('restartGuideWindows');
+        const otherEl = document.getElementById('restartGuideOther');
+        if (IS_WINDOWS) {
+            if (winEl)  winEl.style.display  = 'block';
+            if (otherEl) otherEl.style.display = 'none';
+        } else {
+            if (winEl)  winEl.style.display  = 'none';
+            if (otherEl) otherEl.style.display = 'block';
+        }
+    }
+
+    async function testEchoCredentialsOnly() {
+        const url = (document.getElementById('inputEchoUrl').value || '').trim();
+        const clientId = (document.getElementById('inputClientId').value || '').trim();
+        const clientSecret = (document.getElementById('inputClientSecret').value || '').trim();
+
+        if (!url || !clientId || !clientSecret) {
+            showImportResult('URL / Client ID / Client Secret를 모두 입력해주세요.', false);
+            return;
+        }
+
+        try {
+            const resp = await fetch('/api/settings/echo-credentials/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, clientId, clientSecret })
+            });
+            const data = await resp.json();
+            showImportResult((data.message || '테스트 완료') + ' (응답 시간: ' + (data.responseTime || 'N/A') + ')', !!data.success);
+        } catch (e) {
+            showImportResult('테스트 실패: ' + e.message, false);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSavedCredentials();
+    });
+    /*]]>*/
+    </script>
+    <script th:src="@{/vendor/driverjs/driver.js.iife.js}"></script>
+    <script th:src="@{/js/onboarding-tour.js}"></script>
+    <script th:src="@{/js/context-help.js}"></script>
+</body>
+</html>

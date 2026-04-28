@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{page.device.title}">디바이스 등록</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script>(function(){var t=localStorage.getItem('theme-preference');if(t)document.documentElement.dataset.theme=t;})()</script>
+    <link rel="stylesheet" th:href="@{/vendor/driverjs/driver.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/muse-agent.svg(v=${appVersion})}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico(v=${appVersion})}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h1 class="service-title">
+                        <a href="/" class="service-title-brand">
+                            <img th:src="@{/img/muse-agent.svg(v=${appVersion})}" src="/img/muse-agent.svg" alt="Muse Agent" class="service-title-logo">
+                            <span>Muse Agent</span>
+                        </a>
+                        <span class="service-title-divider">/</span>
+                        <span th:text="#{page.device.title}">디바이스 등록</span>
+                    </h1>
+                    <p class="subtitle" th:text="#{page.device.subtitle}">이 Muse Agent를 Echo Server에 등록합니다</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <button id="btnStartGuide" class="btn btn-outline btn-sm" type="button"
+                        th:attr="data-help-title=#{tour.muse.guide.title},data-help-desc=#{tour.muse.guide.desc}"
+                        th:text="#{nav.guide_start}">가이드 시작</button>
+                    <button id="btnHelpMode" class="btn btn-outline btn-sm btn-help-toggle" type="button" data-help-toggle="true"
+                        th:attr="data-label-show=#{page.help.toggle.show},data-label-hide=#{page.help.toggle.hide}"
+                        th:text="#{page.help.toggle.show}">도움말 보기</button>
+                    <div class="lang-switcher">
+                        <a th:href="@{''(lang='ko')}" th:classappend="${#locale.language == 'ko'} ? ' active' : ''" th:text="#{nav.lang.ko}">한국어</a>
+                        <a th:href="@{''(lang='en')}" th:classappend="${#locale.language == 'en'} ? ' active' : ''" th:text="#{nav.lang.en}">EN</a>
+                        <a th:href="@{''(lang='ja')}" th:classappend="${#locale.language == 'ja'} ? ' active' : ''" th:text="#{nav.lang.ja}">日本語</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Current Registration Status (shown if registered) -->
+            <section class="card" id="currentRegistrationSection" th:if="${deviceStatus.registered}"
+                th:attr="data-help-title=#{help.device.current.title},data-help-desc=#{help.device.current.desc},data-help-placement='bottom'">
+                <h2 th:text="#{page.device.section.current}">현재 디바이스 등록 정보</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="label" th:text="#{page.device.label.device_id}">디바이스 ID</span>
+                        <span class="value" th:text="${deviceStatus.deviceId}">1</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label" th:text="#{page.device.label.device_name}">디바이스 이름</span>
+                        <span class="value" th:text="${deviceStatus.deviceName}">My Device</span>
+                    </div>
+                    <div class="info-item full-width">
+                        <span class="label" th:text="#{page.device.label.device_identifier}">디바이스 식별자 (UUID)</span>
+                        <span class="value" th:text="${deviceStatus.deviceIdentifier}">uuid...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label" th:text="#{page.device.label.registered_at}">등록 일시</span>
+                        <span class="value" th:text="${deviceStatus.registeredAt}">2024-01-01</span>
+                    </div>
+                    <div class="info-item full-width">
+                        <span class="label" th:text="#{page.device.label.os}">운영체제</span>
+                        <span class="value" th:text="${deviceStatus.osInfo}">Windows 11</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label" th:text="#{page.device.label.app_version}">앱 버전</span>
+                        <span class="value" th:text="${deviceStatus.appVersion}">0.1.0</span>
+                    </div>
+                </div>
+
+                <div class="button-group" style="margin-top: 20px;">
+                    <button id="btnUnregister" class="btn btn-danger" onclick="submitUnregistration()"
+                        th:attr="data-help-title=#{help.device.unregister.title},data-help-desc=#{help.device.unregister.desc},data-help-placement='top'">
+                        장비 해제
+                    </button>
+                    <button id="btnShowReregister" class="btn btn-warning" onclick="showReregisterForm()"
+                        th:attr="data-help-title=#{help.device.show_reregister.title},data-help-desc=#{help.device.show_reregister.desc},data-help-placement='top'"
+                        th:text="#{page.device.btn.reregister}">
+                        디바이스 재등록
+                    </button>
+                    <a href="/" class="btn btn-secondary" th:text="#{page.device.btn.back}">
+                        대시보드로
+                    </a>
+                </div>
+            </section>
+
+            <!-- Registration Form (shown if not registered) -->
+            <section class="card" id="registrationSection" th:if="${!deviceStatus.registered}"
+                th:attr="data-help-title=#{help.device.register.title},data-help-desc=#{help.device.register.desc},data-help-placement='bottom'">
+                <h2 th:text="#{page.device.section.register}">신규 디바이스 등록</h2>
+                <p style="margin-bottom: 20px; color: var(--text-secondary);" th:text="#{page.device.msg.register}">
+                    이 Muse Agent 디바이스를 Echo Server에 등록하면 디바이스 추적 및 관리가 가능합니다.
+                </p>
+
+                <form id="registrationForm" class="form-container" onsubmit="event.preventDefault(); submitRegistration();">
+                    <div class="form-group">
+                        <label for="deviceName" class="form-label" th:text="#{page.device.label.device_name_new}">디바이스 이름 *</label>
+                        <input
+                            type="text"
+                            id="deviceName"
+                            name="deviceName"
+                            class="form-input"
+                            th:placeholder="#{page.device.ph.device_name}"
+                            th:attr="data-help-title=#{help.device.name_input.title},data-help-desc=#{help.device.name_input.desc},data-help-placement='right'"
+                            required
+                            pattern="[A-Za-z0-9\s\-_]+"
+                        >
+                        <small class="form-help" th:text="#{page.device.help.device_name}">이 디바이스의 이름 (영숫자, 공백, 하이픈, 언더스코어 가능)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" th:text="#{page.device.label.device_type}">디바이스 유형</label>
+                        <input type="text" class="form-input form-static" value="AGENT" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" th:text="#{page.device.label.os_label}">운영체제</label>
+                        <input
+                            type="text"
+                            class="form-input form-static"
+                            th:value="${osName} + ' ' + ${osVersion}"
+                            readonly
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" th:text="#{page.device.label.version_label}">앱 버전</label>
+                        <input type="text" class="form-input form-static" th:value="${appVersion}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" th:text="#{page.device.label.identifier_label}">디바이스 식별자 (UUID)</label>
+                        <input type="text" class="form-input form-static" th:placeholder="#{page.device.auto_generated}" readonly>
+                        <small class="form-help" th:text="#{page.device.help.identifier}">고유 식별자가 자동으로 생성됩니다</small>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" id="btnRegister" class="btn btn-primary"
+                            th:attr="data-help-title=#{help.device.register_submit.title},data-help-desc=#{help.device.register_submit.desc}"
+                            th:text="#{page.device.btn.register}">
+                            디바이스 등록
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="cancelRegistration()" th:text="#{page.device.btn.cancel}">
+                            취소
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Re-registration Form (hidden initially) -->
+            <section class="card hidden" id="reregisterSection"
+                th:attr="data-help-title=#{help.device.reregister.title},data-help-desc=#{help.device.reregister.desc},data-help-placement='bottom'">
+                <h2 th:text="#{page.device.section.reregister}">디바이스 재등록</h2>
+                <p style="margin-bottom: 20px; color: var(--warning-color);" th:text="#{page.device.msg.reregister_warning}">
+                    재등록 시 현재 등록 정보가 삭제되고 새로운 디바이스 ID와 UUID가 발급됩니다.
+                </p>
+
+                <form id="reregistrationForm" class="form-container" onsubmit="event.preventDefault(); submitReregistration();">
+                    <div class="form-group">
+                        <label for="newDeviceName" class="form-label" th:text="#{page.device.label.new_device_name}">새 디바이스 이름 *</label>
+                        <input
+                            type="text"
+                            id="newDeviceName"
+                            name="newDeviceName"
+                            class="form-input"
+                            th:placeholder="#{page.device.ph.device_name}"
+                            th:attr="data-help-title=#{help.device.new_name_input.title},data-help-desc=#{help.device.new_name_input.desc},data-help-placement='right'"
+                            required
+                            pattern="[A-Za-z0-9\s\-_]+"
+                        >
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" id="btnReregister" class="btn btn-warning"
+                            th:attr="data-help-title=#{help.device.confirm_reregister.title},data-help-desc=#{help.device.confirm_reregister.desc},data-help-placement='top'"
+                            th:text="#{page.device.btn.confirm_reregister}">
+                            재등록 확인
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="cancelReregistration()" th:text="#{page.device.btn.cancel}">
+                            취소
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Result Section -->
+            <section class="card hidden" id="resultSection"
+                th:attr="data-help-title=#{help.device.result.title},data-help-desc=#{help.device.result.desc},data-help-placement='bottom'">
+                <h2 th:text="#{page.device.section.result}">등록 결과</h2>
+                <div id="resultContent" class="result-content"
+                    th:attr="data-help-title=#{help.device.result_content.title},data-help-desc=#{help.device.result_content.desc},data-help-placement='top'"></div>
+                <div class="button-group" style="margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="window.location.reload()" th:text="#{page.device.btn.refresh}">
+                        페이지 새로고침
+                    </button>
+                    <a href="/" class="btn btn-secondary" th:text="#{page.device.btn.back}">
+                        대시보드로
+                    </a>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 if-only Project. Muse Agent v<span th:text="${appVersion}">0.0.0</span></p>
+        </footer>
+    </div>
+
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    const I18N = {
+        noDeviceName: /*[[#{page.device.js.no_device_name}]]*/ '디바이스 이름을 입력하세요',
+        confirmReregister: /*[[#{page.device.js.confirm_reregister}]]*/ '정말 재등록하시겠습니까? 현재 등록 정보가 삭제됩니다. 계속하시겠습니까?',
+        confirmUnregister: '현재 장비 등록을 해제하시겠습니까?',
+        processing: /*[[#{page.device.js.processing}]]*/ '처리 중...',
+        successTitle: /*[[#{page.device.js.success_title}]]*/ '등록 성공',
+        unregisterSuccessTitle: '해제 성공',
+        unregisterSuccessMessage: '장비 등록이 해제되었습니다.',
+        deviceIdLabel: /*[[#{page.device.js.device_id_label}]]*/ '디바이스 ID',
+        deviceNameLabel: /*[[#{page.device.js.device_name_label}]]*/ '디바이스 이름',
+        identifierLabel: /*[[#{page.device.js.identifier_label}]]*/ '식별자',
+        registeredAtLabel: /*[[#{page.device.js.registered_at_label}]]*/ '등록 일시',
+        osLabel: /*[[#{page.device.js.os_label}]]*/ 'OS',
+        troubleshoot: /*[[#{page.device.js.troubleshoot}]]*/ '문제 해결',
+        checkEcho: /*[[#{page.device.js.check_echo}]]*/ '설정된 URL에서 Echo Server가 실행 중인지 확인하세요',
+        checkClient: /*[[#{page.device.js.check_client}]]*/ '클라이언트 인증 정보가 올바른지 확인하세요',
+        checkNetwork: /*[[#{page.device.js.check_network}]]*/ '네트워크 연결을 확인하세요',
+    };
+    window.MUSE_TOUR_I18N = {
+        guideTitle: /*[[#{tour.muse.guide.title}]]*/ '가이드 다시 보기',
+        guideDesc: /*[[#{tour.muse.guide.desc}]]*/ '언제든 이 버튼으로 투어를 다시 시작할 수 있습니다.',
+        devicePageTitle: /*[[#{tour.muse.device_page.title}]]*/ '디바이스 등록 화면',
+        devicePageDesc: /*[[#{tour.muse.device_page.desc}]]*/ '등록 상태 확인, 신규 등록, 재등록 흐름을 이 화면에서 관리합니다.',
+        deviceCurrentTitle: /*[[#{tour.muse.device_current.title}]]*/ '현재 등록 정보',
+        deviceCurrentDesc: /*[[#{tour.muse.device_current.desc}]]*/ '이미 등록된 디바이스의 ID, 이름, UUID, 운영체제 정보를 확인합니다.',
+        deviceRegisterTitle: /*[[#{tour.muse.device_register.title}]]*/ '신규 등록 폼',
+        deviceRegisterDesc: /*[[#{tour.muse.device_register.desc}]]*/ '디바이스 이름을 입력해 Echo Server 등록을 시작합니다.',
+        deviceReregisterTitle: /*[[#{tour.muse.device_reregister.title}]]*/ '재등록 섹션',
+        deviceReregisterDesc: /*[[#{tour.muse.device_reregister.desc}]]*/ '기존 등록을 갱신해야 할 때 새 이름으로 재등록을 진행합니다.',
+        deviceResultTitle: /*[[#{tour.muse.device_result.title}]]*/ '처리 결과',
+        deviceResultDesc: /*[[#{tour.muse.device_result.desc}]]*/ '등록 또는 해제 처리 결과와 후속 조치를 확인합니다.'
+    };
+    /*]]>*/
+    </script>
+    <script th:src="@{/js/device-register.js}"></script>
+    <script th:src="@{/vendor/driverjs/driver.js.iife.js}"></script>
+    <script th:src="@{/js/onboarding-tour.js}"></script>
+    <script th:src="@{/js/context-help.js}"></script>
+</body>
+</html>

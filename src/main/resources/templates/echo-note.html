@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{page.echo_note.title}">Echo Note 보관함</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script>(function(){var t=localStorage.getItem('theme-preference');if(t)document.documentElement.dataset.theme=t;})()</script>
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/muse-agent.svg(v=${appVersion})}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico(v=${appVersion})}">
+    <style>
+        .en-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .en-table th, .en-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: top; }
+        .en-table th { color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
+        .en-table td { font-size: 0.9rem; }
+        .en-table tr:hover { background-color: rgba(74, 144, 217, 0.05); }
+        .en-recipient { font-family: 'Consolas', monospace; word-break: break-all; }
+        .en-message-preview { color: var(--text-secondary); max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .en-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .en-badge-draft { background-color: rgba(108, 117, 125, 0.2); color: var(--secondary-color); }
+        .en-badge-ready { background-color: rgba(40, 167, 69, 0.2); color: var(--success-color); }
+        .en-badge-sent { background-color: rgba(23, 162, 184, 0.2); color: var(--info-color); }
+        .en-badge-no-preview { background-color: rgba(255, 193, 7, 0.18); color: var(--warning-color); }
+        .en-badge-has-preview { background-color: rgba(74, 144, 217, 0.18); color: var(--primary-color); }
+        .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+        .en-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+        .empty-state { text-align: center; padding: 40px; color: var(--text-secondary); }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        .summary-item { text-align: center; padding: 15px; background: rgba(74, 144, 217, 0.05); border-radius: 8px; }
+        .summary-item .number { font-size: 2rem; font-weight: 700; color: var(--primary-color); }
+        .summary-item .label { font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px; }
+        .en-textarea { width: 100%; min-height: 120px; resize: vertical; font-family: inherit; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; }
+        .en-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .en-modal-backdrop.open { display: flex; }
+        .en-modal { background: var(--card-bg, #fff); color: var(--text-primary); border-radius: 10px; width: min(560px, 92vw); max-height: 90vh; overflow: auto; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); }
+        .en-modal h3 { margin: 0 0 16px; }
+        .en-modal .form-group { margin-bottom: 14px; }
+        .en-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+        .en-stub-note { background: rgba(255, 193, 7, 0.08); border-left: 3px solid var(--warning-color); padding: 10px 14px; border-radius: 4px; color: var(--text-secondary); font-size: 0.85rem; margin-top: 10px; }
+        .en-welcome-banner { background: rgba(40, 167, 69, 0.06); border-left: 4px solid var(--success-color); }
+        .en-welcome-banner h2 { color: var(--success-color); }
+        .en-welcome-error { background: rgba(220, 53, 69, 0.06); border-left: 4px solid var(--danger-color); }
+        .en-welcome-error h2 { color: var(--danger-color); }
+        .en-warning { color: var(--warning-color); font-weight: 600; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h1 class="service-title">
+                        <a href="/" class="service-title-brand">
+                            <img th:src="@{/img/muse-agent.svg(v=${appVersion})}" src="/img/muse-agent.svg" alt="Muse Agent" class="service-title-logo">
+                            <span>Muse Agent</span>
+                        </a>
+                        <span class="service-title-divider">/</span>
+                        <span th:text="#{page.echo_note.title}">Echo Note 보관함</span>
+                    </h1>
+                    <p class="subtitle" th:text="#{page.echo_note.subtitle}">사용자 PC 에 보관되는 echo-note 메시지</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <a href="/" class="btn btn-outline btn-sm" th:text="#{page.echo_note.btn.back_dashboard}">대시보드로</a>
+                    <div class="lang-switcher">
+                        <a th:href="@{''(lang='ko')}" th:classappend="${#locale.language == 'ko'} ? ' active' : ''" th:text="#{nav.lang.ko}">한국어</a>
+                        <a th:href="@{''(lang='en')}" th:classappend="${#locale.language == 'en'} ? ' active' : ''" th:text="#{nav.lang.en}">EN</a>
+                        <a th:href="@{''(lang='ja')}" th:classappend="${#locale.language == 'ja'} ? ' active' : ''" th:text="#{nav.lang.ja}">日本語</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Phase 5b: echo continuation token 진입 결과 banner -->
+            <section th:if="${welcomeFromEcho}" class="card en-welcome-banner">
+                <h2 th:text="#{page.echo_note.welcome.title}">echo 와의 연결이 완료됐어요</h2>
+                <p th:utext="#{page.echo_note.welcome.body(${welcomeUserEmail})}">사용자님의 자격증명이 muse-agent 에 저장됐어요.</p>
+                <p class="en-warning" th:text="#{page.echo_note.welcome.restart_hint}">새 자격증명을 적용하려면 muse-agent 를 재시작해주세요.</p>
+            </section>
+            <section th:if="${welcomeError}" class="card en-welcome-error">
+                <h2 th:text="#{page.echo_note.welcome.error_title}">echo 와의 연결이 실패했어요</h2>
+                <p th:text="${welcomeError}">사유</p>
+                <p class="en-sub" th:text="#{page.echo_note.welcome.error_hint}">echo-config 페이지에서 자격증명을 직접 설정하실 수 있어요.</p>
+            </section>
+
+            <!-- Privacy 안내 -->
+            <section class="card">
+                <h2 th:text="#{page.echo_note.section.privacy}">강화 privacy 안내</h2>
+                <p style="margin-top: 8px; color: var(--text-secondary); line-height: 1.7;" th:text="#{page.echo_note.privacy.notice}">
+                    이곳에 보관되는 메시지는 사용자 PC 의 muse-agent 데이터베이스에만 저장돼요. echo-server 는 이 메시지를 평소엔 갖고 있지 않고, 발송 시점에만 받아 대신 전송해요.
+                </p>
+            </section>
+
+            <!-- 요약 -->
+            <section class="card">
+                <h2 th:text="#{page.echo_note.section.summary}">요약</h2>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="number" th:text="${totalCount}">0</div>
+                        <div class="label" th:text="#{page.echo_note.label.total}">전체 메시지</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="number" th:text="${readyCount}">0</div>
+                        <div class="label" th:text="#{page.echo_note.label.ready}">마침 처리됨</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 새 메시지 작성 -->
+            <section class="card">
+                <h2 th:text="#{page.echo_note.section.compose}">새 메시지 작성</h2>
+                <form id="hnComposeForm" class="form-container" onsubmit="event.preventDefault(); hnCreate();">
+                    <div class="form-group">
+                        <label for="hnRecipientEmail" class="form-label" th:text="#{page.echo_note.label.recipient}">수신자 이메일 *</label>
+                        <input type="email" id="hnRecipientEmail" class="form-input" th:placeholder="#{page.echo_note.ph.recipient}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="hnOriginalMessage" class="form-label" th:text="#{page.echo_note.label.message}">메시지 본문 *</label>
+                        <textarea id="hnOriginalMessage" class="en-textarea" th:placeholder="#{page.echo_note.ph.message}" required></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" id="hnBtnCreate" class="btn btn-primary" th:text="#{page.echo_note.btn.create}">메시지 보관</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- 보관함 -->
+            <section class="card">
+                <h2 th:text="#{page.echo_note.section.list}">보관된 메시지</h2>
+                <div th:if="${#lists.isEmpty(messages)}" class="empty-state">
+                    <p th:text="#{page.echo_note.empty.title}">보관된 메시지가 없어요.</p>
+                    <p style="margin-top: 8px; font-size: 0.9rem;" th:text="#{page.echo_note.empty.subtitle}">위에서 새 메시지를 작성해주세요.</p>
+                </div>
+                <table class="en-table" th:if="${!#lists.isEmpty(messages)}">
+                    <thead>
+                        <tr>
+                            <th th:text="#{page.echo_note.col.recipient}">수신자</th>
+                            <th th:text="#{page.echo_note.col.message}">원본 메시지</th>
+                            <th th:text="#{page.echo_note.col.status}">상태</th>
+                            <th th:text="#{page.echo_note.col.preview_state}">프리뷰</th>
+                            <th th:text="#{page.echo_note.col.actions}">작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="m : ${messages}">
+                            <td class="en-recipient" th:text="${m.recipientEmail}"></td>
+                            <td class="en-message-preview" th:text="${m.originalMessage}"></td>
+                            <td>
+                                <span class="en-badge"
+                                      th:classappend="${m.status == 'READY'} ? 'en-badge-ready' : (${m.status == 'SENT'} ? 'en-badge-sent' : 'en-badge-draft')"
+                                      th:text="${m.status == 'READY'} ? #{page.echo_note.status.ready} : (${m.status == 'SENT'} ? #{page.echo_note.status.sent} : #{page.echo_note.status.draft})"></span>
+                                <span th:if="${m.status == 'READY' and m.scheduledAt != null}"
+                                      style="display: block; margin-top: 4px; font-size: 0.72rem; color: var(--text-secondary); letter-spacing: 0.02em;"
+                                      th:text="#{page.echo_note.label.scheduled_hint}">예약됨 (3개월 이후)</span>
+                            </td>
+                            <td>
+                                <span class="en-badge"
+                                      th:classappend="${m.aiGeneratedMessage != null} ? 'en-badge-has-preview' : 'en-badge-no-preview'"
+                                      th:text="${m.aiGeneratedMessage != null} ? #{page.echo_note.preview.ready} : #{page.echo_note.preview.absent}"></span>
+                            </td>
+                            <td>
+                                <div class="en-actions">
+                                    <button class="btn btn-sm btn-info" th:onclick="'hnGeneratePreview(' + ${m.id} + ')'" th:text="#{page.echo_note.btn.preview}">프리뷰</button>
+                                    <button class="btn btn-sm" th:onclick="'hnOpenEdit(' + ${m.id} + ')'" th:text="#{page.echo_note.btn.edit}">수정</button>
+                                    <button th:if="${m.status == 'DRAFT'}" class="btn btn-sm btn-primary" th:disabled="${m.aiGeneratedMessage == null}" th:onclick="'hnFinalize(' + ${m.id} + ')'" th:text="#{page.echo_note.btn.finalize}">마침</button>
+                                    <button th:if="${m.status == 'READY'}" class="btn btn-sm btn-secondary" th:onclick="'hnRevert(' + ${m.id} + ')'" th:text="#{page.echo_note.btn.revert}">초안으로</button>
+                                    <button th:if="${m.status == 'READY'}" class="btn btn-sm btn-info" th:onclick="'hnSendViaEcho(' + ${m.id} + ')'" th:text="#{page.echo_note.btn.send_via_echo}">echo 발송</button>
+                                    <button class="btn btn-sm btn-danger" th:onclick="'hnDelete(' + ${m.id} + ')'" th:text="#{page.echo_note.btn.delete}">삭제</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- 결과 -->
+            <section class="card hidden" id="hnResultSection">
+                <div id="hnResultContent" class="result-content"></div>
+            </section>
+        </main>
+
+        <footer></footer>
+    </div>
+
+    <!-- 편집 modal -->
+    <div class="en-modal-backdrop" id="hnEditBackdrop">
+        <div class="en-modal">
+            <h3 th:text="#{page.echo_note.modal.edit_title}">메시지 수정</h3>
+            <input type="hidden" id="hnEditId">
+            <div class="form-group">
+                <label for="hnEditRecipient" class="form-label" th:text="#{page.echo_note.label.recipient}">수신자 이메일</label>
+                <input type="email" id="hnEditRecipient" class="form-input">
+            </div>
+            <div class="form-group">
+                <label for="hnEditOriginal" class="form-label" th:text="#{page.echo_note.label.message}">원본 메시지</label>
+                <textarea id="hnEditOriginal" class="en-textarea"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="hnEditPreview" class="form-label" th:text="#{page.echo_note.label.preview_text}">프리뷰 (편집 가능)</label>
+                <textarea id="hnEditPreview" class="en-textarea" rows="6"></textarea>
+                <small class="form-help" style="color: var(--text-secondary);" th:text="#{page.echo_note.help.preview_edit}">발송 직전에 한 번 더 다듬을 수 있어요.</small>
+            </div>
+            <div class="en-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="hnCloseEdit()" th:text="#{page.echo_note.btn.cancel}">취소</button>
+                <button type="button" class="btn btn-primary" onclick="hnSaveEdit()" th:text="#{page.echo_note.btn.save}">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        window.ECHO_NOTE_I18N = {
+            confirmDelete: /*[[#{page.echo_note.confirm.delete}]]*/ '정말 삭제할까요?',
+            confirmFinalize: /*[[#{page.echo_note.confirm.finalize}]]*/ '지금까지 작성한 내용으로 마침 처리할까요? 작성해주신 메세지는 3개월 후부터 제가 임의로 지정한 날에 그분께 닿을 거예요.',
+            confirmRevert: /*[[#{page.echo_note.confirm.revert}]]*/ '초안으로 되돌릴까요?',
+            confirmSendViaEcho: /*[[#{page.echo_note.confirm.send_via_echo}]]*/ '자동 스케줄러를 기다리지 않고 지금 즉시 발송할까요? (수동 발송 — 테스트/긴급 용도)',
+            sentViaEcho: /*[[#{page.echo_note.msg.sent_via_echo}]]*/ '발송되었어요.',
+            saved: /*[[#{page.echo_note.msg.saved}]]*/ '저장되었어요.',
+            created: /*[[#{page.echo_note.msg.created}]]*/ '메시지가 보관함에 저장되었어요.',
+            previewGenerated: /*[[#{page.echo_note.msg.preview_generated}]]*/ '프리뷰가 생성되었어요.',
+            finalized: /*[[#{page.echo_note.msg.finalized}]]*/ '마침 처리되었어요.',
+            reverted: /*[[#{page.echo_note.msg.reverted}]]*/ '초안으로 되돌렸어요.',
+            deleted: /*[[#{page.echo_note.msg.deleted}]]*/ '삭제되었어요.',
+            errorPrefix: /*[[#{page.echo_note.msg.error_prefix}]]*/ '오류: '
+        };
+        window.ECHO_NOTE_LOCALE = /*[[${#locale.language}]]*/ 'ko';
+    </script>
+    <script th:src="@{/js/echo-note.js(v=${appVersion})}"></script>
+</body>
+</html>
