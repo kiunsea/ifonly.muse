@@ -42,8 +42,20 @@
 - Thymeleaf (UI)
 - Driver.js (온보딩)
 
+### 호환성
+
+| 영역                  | 값                                |
+| :-------------------- | :-------------------------------- |
+| 호출 대상 echo API    | `unversioned`                     |
+| echo-note path prefix | `/api/external/echo-note/...`     |
+| 선언 위치             | `app.echo-server.api.external-api-version` (application.yml) |
+
+부팅 시 `Echo external API contract: muse expects version='unversioned'` 가 INFO 레벨로 로그됩니다.
+
+echo 운영팀이 `/v1/` 도입 시 본 repo 의 새 릴리즈는 `application.yml` 갱신만으로 대응 가능 (코드 변경 불요). 본 매트릭스의 다음 행은 향후 릴리즈에 추가됩니다.
+
 ### 알려진 제약
 
 - Windows 우선 (Mac / Linux 는 미검증)
 - Echo Note 자동 발송은 muse-agent 가 동작 중일 때만 가능 — PC 가 꺼져 있으면 다음 부팅 시 누락된 발송분이 처리됨
-- echo 서비스의 외부 API 가 호환되지 않는 응답을 반환하면 Echo Note 기능 자체가 비활성됨 (echo 무관 기능은 영향 없음)
+- echo 서비스의 외부 API 가 호환되지 않는 응답을 반환하면 Echo Note 기능이 stub fallback 으로 동작 (echo 무관 기능은 영향 없음)
