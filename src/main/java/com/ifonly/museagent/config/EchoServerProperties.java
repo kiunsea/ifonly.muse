@@ -15,6 +15,17 @@ import org.springframework.stereotype.Component;
 @Data
 public class EchoServerProperties {
 
+  /**
+   * 본 muse 빌드가 인지하고 있는 echo external API 의 최신 버전.
+   *
+   * <p>{@link ApiProperties#externalApiVersion} 가 본 값과 다르면 부팅 시 WARN — yaml 이 stale 한 상태로 운영 중일
+   * 가능성을 알린다 (예: muse 새 버전을 배포해 latest 가 {@code v1} 인데 application.yml 은 여전히 {@code unversioned}
+   * 인 경우).
+   *
+   * <p>echo-server 가 새 버전을 도입할 때마다 본 상수를 함께 갱신.
+   */
+  public static final String LATEST_KNOWN_EXTERNAL_API_VERSION = "unversioned";
+
   /** Echo Server URL */
   private String url;
 

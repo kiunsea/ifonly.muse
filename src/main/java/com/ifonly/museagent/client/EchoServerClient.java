@@ -49,13 +49,22 @@ public class EchoServerClient {
 
   @PostConstruct
   void logExpectedExternalApiVersion() {
-    String version =
+    String configured =
         properties.getApi() == null ? null : properties.getApi().getExternalApiVersion();
+    String latestKnown = EchoServerProperties.LATEST_KNOWN_EXTERNAL_API_VERSION;
     log.info(
-        "Echo external API contract: muse expects version='{}' (echo-note paths preview={}, send={})",
-        version,
+        "Echo external API contract: muse expects version='{}' (latest known by this build: '{}'; echo-note paths preview={}, send={})",
+        configured,
+        latestKnown,
         properties.getApi() == null ? null : properties.getApi().getEchoNotePreview(),
         properties.getApi() == null ? null : properties.getApi().getEchoNoteSend());
+    if (configured != null && !configured.equals(latestKnown)) {
+      log.warn(
+          "Echo external API version mismatch: application.yml declares '{}' but this muse build's latest known version is '{}'. "
+              + "Update app.echo-server.api.external-api-version (and the echo-note-* paths) — or upgrade muse if you intend to track a newer echo.",
+          configured,
+          latestKnown);
+    }
   }
 
   /**
