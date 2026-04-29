@@ -12,8 +12,8 @@
   <!-- 실행 파일 경로 (번들된 JRE의 java.exe 사용) -->
   <executable>%BASE%\..\jre\bin\java.exe</executable>
 
-  <!-- 실행 인자 (JVM 옵션 + JAR 파일) -->
-    <arguments>-Xms256m -Xmx1024m -jar "%BASE%\..\muse-agent-1.0.3.jar"</arguments>
+  <!-- 실행 인자 (JVM 옵션 + JAR 파일). __JAR_FILENAME__ 은 deploy.bat 에서 실제 JAR 이름으로 치환됩니다. -->
+    <arguments>-Xms256m -Xmx1024m -jar "%BASE%\..\__JAR_FILENAME__"</arguments>
   
   <!-- 작업 디렉토리 -->
   <workingdirectory>%BASE%\..</workingdirectory>

@@ -267,6 +267,18 @@ if exist "%DEFAULT_BUNDLE_DIR%\service\logs" (
     echo [INFO] Excluded service logs folder from package.
 )
 
+set "SERVICE_XML=%DEFAULT_BUNDLE_DIR%\service\muse-agent-service.xml"
+if exist "%SERVICE_XML%" (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$p='%SERVICE_XML%'; $c=Get-Content -LiteralPath $p -Raw -Encoding UTF8; $c=$c -replace '__JAR_FILENAME__','%JAR_FILE%'; [System.IO.File]::WriteAllText($p,$c,(New-Object System.Text.UTF8Encoding $false))"
+    if errorlevel 1 (
+        echo [ERROR] Failed to inject JAR filename into service XML.
+        exit /b 1
+    )
+    echo [INFO] Service XML JAR placeholder replaced: %JAR_FILE%
+) else (
+    echo [WARN] Service XML not found, skipping placeholder substitution: %SERVICE_XML%
+)
+
 for %%F in (%DEFAULT_BUNDLE_DIR%\ifonly-muse-*.jar) do (
     if /I not "%%~nxF"=="ifonly-muse-%VERSION%.jar" (
         del /f /q "%%~fF" >nul 2>&1

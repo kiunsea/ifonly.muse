@@ -21,7 +21,7 @@ if exist "service\muse-agent-service.exe" (
 
 echo.
 echo [2/4] Close tray app and Muse-Agent app processes...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$tray = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*Muse-Agent-Tray.ps1*' }; foreach ($p in $tray) { Invoke-CimMethod -InputObject $p -MethodName Terminate | Out-Null }; $app = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*muse-agent-*.jar*' }; foreach ($p in $app) { Invoke-CimMethod -InputObject $p -MethodName Terminate | Out-Null }; Write-Host '[INFO] Related processes terminated.'"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$tray = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*Muse-Agent-Tray.ps1*' }; foreach ($p in $tray) { Invoke-CimMethod -InputObject $p -MethodName Terminate | Out-Null }; $app = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*ifonly-muse-*.jar*' }; foreach ($p in $app) { Invoke-CimMethod -InputObject $p -MethodName Terminate | Out-Null }; Write-Host '[INFO] Related processes terminated.'"
 
 echo.
 echo [3/4] Delete desktop/start-menu shortcuts...

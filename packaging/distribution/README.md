@@ -41,7 +41,7 @@
 	- 제거 대상 바로가기: `Muse-Agent Tray.lnk`, `Muse-Agent Dashboard.url`
 - `Muse-Agent.bat`
 	- 서비스 설치 없이 콘솔에서 직접 실행하는 스크립트입니다.
-	- 배포 폴더의 최신 `muse-agent-*.jar`를 자동 탐색해 실행합니다.
+	- 배포 폴더의 최신 `ifonly-muse-*.jar`를 자동 탐색해 실행합니다.
 	- 기본 포트 `8484`이 사용 중이면 다른 포트를 입력받아 실행할 수 있습니다.
 	- 실행 전 초기화 확인 프롬프트가 표시되며 기본 운영 정책은 `N`(초기화 안 함)입니다.
 - `Muse-Agent-Tray.ps1`

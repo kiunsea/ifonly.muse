@@ -6,12 +6,12 @@ set "MIN_JAVA_MAJOR=17"
 
 REM -- Locate JAR (newest first) --
 set "APP_JAR="
-for /f "delims=" %%F in ('dir /b /o:-d "muse-agent-*.jar" 2^>nul') do (
+for /f "delims=" %%F in ('dir /b /o:-d "ifonly-muse-*.jar" 2^>nul') do (
     if not defined APP_JAR set "APP_JAR=%%F"
 )
 
 if not defined APP_JAR (
-    echo [ERROR] muse-agent-*.jar not found in current folder.
+    echo [ERROR] ifonly-muse-*.jar not found in current folder.
     pause
     exit /b 1
 )

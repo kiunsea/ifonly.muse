@@ -12,7 +12,7 @@ set "DASHBOARD_WAIT_SEC=45"
 set "SERVICE_PORT=8484"
 set "APP_JAR="
 
-for /f "delims=" %%F in ('dir /b /o:-d "muse-agent-*.jar" 2^>nul') do (
+for /f "delims=" %%F in ('dir /b /o:-d "ifonly-muse-*.jar" 2^>nul') do (
     if not defined APP_JAR set "APP_JAR=%%F"
 )
 
@@ -24,7 +24,7 @@ if not exist "service\muse-agent-service.exe" (
 )
 
 if not defined APP_JAR (
-    echo [ERROR] muse-agent-*.jar not found.
+    echo [ERROR] ifonly-muse-*.jar not found.
     pause
     exit /b 1
 )
@@ -82,7 +82,7 @@ if /I "%CLEANUP_OLD%"=="Y" (
     )
 
     echo [INFO] Terminating existing Muse-Agent app/tray processes...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "$targets = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -and ( $_.CommandLine -like '*Muse-Agent-Tray.ps1*' -or $_.CommandLine -like '*muse-agent-*.jar*' ) }; if (-not $targets) { Write-Host '[INFO] No existing Muse-Agent processes found.'; exit 0 }; foreach ($p in $targets) { try { Invoke-CimMethod -InputObject $p -MethodName Terminate | Out-Null; Write-Host ('[KILL] PID ' + $p.ProcessId) } catch { Write-Host ('[WARN] Failed to terminate PID ' + $p.ProcessId + ': ' + $_.Exception.Message) } }"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$targets = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -and ( $_.CommandLine -like '*Muse-Agent-Tray.ps1*' -or $_.CommandLine -like '*ifonly-muse-*.jar*' ) }; if (-not $targets) { Write-Host '[INFO] No existing Muse-Agent processes found.'; exit 0 }; foreach ($p in $targets) { try { Invoke-CimMethod -InputObject $p -MethodName Terminate | Out-Null; Write-Host ('[KILL] PID ' + $p.ProcessId) } catch { Write-Host ('[WARN] Failed to terminate PID ' + $p.ProcessId + ': ' + $_.Exception.Message) } }"
 ) else (
     echo [INFO] Skipping existing process cleanup.
 )
