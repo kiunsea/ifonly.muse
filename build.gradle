@@ -127,6 +127,14 @@ bootJar {
 	archiveFileName = "ifonly-muse-${version}.jar"
 }
 
+// META-INF/build-info.properties 생성 → BuildProperties bean 으로 런타임 주입
+springBoot {
+	buildInfo()
+}
+
+// processResources 에서 build-info.properties 가 classpath 에 포함되도록 강제 의존
+processResources.dependsOn('bootBuildInfo')
+
 application {
 	mainClass = 'com.ifonly.museagent.MuseAgentLauncher'
 	applicationName = 'ifonly-muse'

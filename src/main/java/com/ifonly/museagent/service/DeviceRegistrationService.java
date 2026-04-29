@@ -11,6 +11,7 @@ import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 /**
@@ -33,10 +34,12 @@ public class DeviceRegistrationService {
   public DeviceRegistrationService(
       EchoServerClient echoServerClient,
       SecureConfigService secureConfigService,
+      BuildProperties buildProperties,
       @Value("${spring.application.name:muse-agent}") String appName) {
     this.echoServerClient = echoServerClient;
     this.secureConfigService = secureConfigService;
-    this.appVersion = "0.1.0"; // TODO: Read from build configuration
+    String resolved = buildProperties != null ? buildProperties.getVersion() : null;
+    this.appVersion = (resolved == null || resolved.isBlank()) ? "0.0.0" : resolved;
   }
 
   /**
