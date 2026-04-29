@@ -74,6 +74,12 @@ POST https://echo-server.omnibuscode.com/oauth2/token  →  HTTP 401 invalid_cli
 - `bat/run.bat` 의 매 실행 `gradlew clean bootRun` — 사용자 정책상 그대로 유지 (테스트용)
 - `bat/deploy.bat` 의 VERSION-INFO 안 `Git Commit: unknown` — cmd 환경에서 git PATH 없을 때 fallback. traceability 만 영향, 보안 무관
 
+### D2. 릴리즈 검증 체크리스트 (방법론)
+deploy.bat ZIP 검증을 *내용물 누설 검사* 로만 마치면 launcher 회귀가 통과한다 (2026-04-30 사례: split 후 `muse-agent-*.jar` → `ifonly-muse-*.jar` 이름 변경이 launcher 들에 미반영, fix `32b5bc2`). 다음 릴리즈 검증 체크 항목:
+1. ZIP 내용물 sanity (현재 항목)
+2. **추출 → `Muse-Agent.bat` 1회 launch 시도** — JAR 탐색 통과 / 부팅 성공까지 확인. 회귀 차단의 핵심.
+3. **`agent_install.bat` 검증 (관리자 권한 필요)** — 서비스 등록 + service XML JAR 경로 정상 substitution 확인. 환경 영향 큼, release 직전에만 수행.
+
 ### E. 기능 추가·개선
 - 사용자 추가 시 갱신
 
