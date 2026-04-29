@@ -79,7 +79,7 @@ public class EchoNoteMessageService {
             .build();
 
     EchoNoteMessageDto saved = dao.save(dto);
-    log.info("Home-nudge message created: id={}, status=DRAFT", saved.getId());
+    log.info("Echo-note message created: id={}, status=DRAFT", saved.getId());
     return saved;
   }
 
@@ -107,7 +107,7 @@ public class EchoNoteMessageService {
     }
 
     EchoNoteMessageDto updated = dao.update(existing);
-    log.info("Home-nudge message updated: id={}", updated.getId());
+    log.info("Echo-note message updated: id={}", updated.getId());
     return updated;
   }
 
@@ -126,7 +126,7 @@ public class EchoNoteMessageService {
     String preview = previewGenerator.generate(existing.getOriginalMessage(), existing.getLocale());
     existing.setAiGeneratedMessage(preview);
     EchoNoteMessageDto updated = dao.update(existing);
-    log.info("Home-nudge preview generated (stub): id={}", updated.getId());
+    log.info("Echo-note preview generated (stub): id={}", updated.getId());
     return updated;
   }
 
@@ -152,7 +152,7 @@ public class EchoNoteMessageService {
     existing.setScheduledAt(generateRandomScheduledAt());
     EchoNoteMessageDto updated = dao.update(existing);
     log.info(
-        "Home-nudge message finalized to READY: id={} (scheduled_at hidden from user)",
+        "Echo-note message finalized to READY: id={} (scheduled_at hidden from user)",
         updated.getId());
     return updated;
   }
@@ -182,7 +182,7 @@ public class EchoNoteMessageService {
     existing.setStatus("DRAFT");
     existing.setScheduledAt(null);
     EchoNoteMessageDto updated = dao.update(existing);
-    log.info("Home-nudge message reverted to DRAFT: id={}", updated.getId());
+    log.info("Echo-note message reverted to DRAFT: id={}", updated.getId());
     return updated;
   }
 
@@ -215,7 +215,7 @@ public class EchoNoteMessageService {
           echoServerClient.sendEchoNote(
               existing.getRecipientEmail(), existing.getAiGeneratedMessage(), existing.getLocale());
     } catch (Exception e) {
-      log.error("Home-nudge send via echo failed: id={}", id, e);
+      log.error("Echo-note send via echo failed: id={}", id, e);
       throw new IllegalStateException("echo-server 발송에 실패했어요. 자격증명/네트워크/echo 상태를 확인해주세요.", e);
     }
 
@@ -223,7 +223,7 @@ public class EchoNoteMessageService {
     if (!"sent".equals(status)) {
       String message = result == null ? "응답 없음" : String.valueOf(result.get("message"));
       log.warn(
-          "Home-nudge send via echo returned non-sent status: id={}, status={}, message={}",
+          "Echo-note send via echo returned non-sent status: id={}, status={}, message={}",
           id,
           status,
           message);
@@ -234,14 +234,14 @@ public class EchoNoteMessageService {
     existing.setSentAt(LocalDateTime.now());
     EchoNoteMessageDto updated = dao.update(existing);
     log.info(
-        "Home-nudge message sent via echo: id={}, recipient={}", id, existing.getRecipientEmail());
+        "Echo-note message sent via echo: id={}, recipient={}", id, existing.getRecipientEmail());
     return updated;
   }
 
   public boolean delete(Long id) {
     boolean deleted = dao.deleteById(id);
     if (deleted) {
-      log.info("Home-nudge message deleted: id={}", id);
+      log.info("Echo-note message deleted: id={}", id);
     }
     return deleted;
   }

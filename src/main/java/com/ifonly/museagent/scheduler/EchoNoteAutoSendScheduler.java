@@ -63,26 +63,26 @@ public class EchoNoteAutoSendScheduler {
     LocalDateTime now = LocalDateTime.now();
     List<EchoNoteMessageDto> due = dao.findReadyDueForSending(now);
     if (due.isEmpty()) {
-      log.debug("Home-nudge auto-send: 도래한 메시지 없음 (now={})", now);
+      log.debug("Echo-note auto-send: 도래한 메시지 없음 (now={})", now);
       return;
     }
 
-    log.info("Home-nudge auto-send 시작: {}건 처리 예정", due.size());
+    log.info("Echo-note auto-send 시작: {}건 처리 예정", due.size());
     int sent = 0;
     int failed = 0;
     for (EchoNoteMessageDto m : due) {
       try {
         messageService.sendViaEcho(m.getId());
         sent++;
-        log.info("Home-nudge auto-send 성공: id={}", m.getId());
+        log.info("Echo-note auto-send 성공: id={}", m.getId());
       } catch (Exception e) {
         failed++;
         log.warn(
-            "Home-nudge auto-send 실패 (status 유지, 다음 시간에 재시도): id={}, reason={}",
+            "Echo-note auto-send 실패 (status 유지, 다음 시간에 재시도): id={}, reason={}",
             m.getId(),
             e.getMessage());
       }
     }
-    log.info("Home-nudge auto-send 완료: sent={}, failed={}, total={}", sent, failed, due.size());
+    log.info("Echo-note auto-send 완료: sent={}, failed={}, total={}", sent, failed, due.size());
   }
 }

@@ -262,6 +262,11 @@ if exist "%DEFAULT_BUNDLE_DIR%\logs" (
     echo [INFO] Excluded runtime logs folder from package.
 )
 
+if exist "%DEFAULT_BUNDLE_DIR%\service\logs" (
+    rmdir /s /q "%DEFAULT_BUNDLE_DIR%\service\logs"
+    echo [INFO] Excluded service logs folder from package.
+)
+
 for %%F in (%DEFAULT_BUNDLE_DIR%\ifonly-muse-*.jar) do (
     if /I not "%%~nxF"=="ifonly-muse-%VERSION%.jar" (
         del /f /q "%%~fF" >nul 2>&1
