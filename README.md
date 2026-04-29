@@ -35,15 +35,15 @@
 ### 필수 환경
 
 - Windows 10 / 11 (64-bit)
-- Java 17 이상 (포함된 install.bat 가 자동 설치 가이드)
+- Java 17 이상 — 별도 설치 불요 (배포 패키지의 `agent_install.bat` 가 `download-jre.ps1` 로 자동 다운받음)
 - if-only Echo 서비스 계정 (Echo Note 기능을 사용하려면)
 
 ### 설치 단계
 
 1. [Releases 페이지](https://github.com/kiunsea/ifonly.muse/releases/latest) 에서 최신 zip 파일 다운로드
 2. 압축 해제
-3. `install.bat` 우클릭 → "관리자 권한으로 실행"
-4. 자동으로 Windows 서비스 등록 + 기본 브라우저로 대시보드 열림
+3. `agent_install.bat` 우클릭 → "관리자 권한으로 실행"
+4. 자동으로 JRE 다운로드 → Windows 서비스 등록 → 트레이 앱 실행 → 기본 브라우저로 대시보드 열림
 
 ### 첫 실행
 
