@@ -59,3 +59,6 @@ gradle-app.setting
 # OS
 .DS_Store
 Thumbs.db
+
+# Claude Code per-project state (transcripts, memory)
+/.claude/
