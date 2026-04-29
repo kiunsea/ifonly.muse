@@ -1,7 +1,7 @@
 # 다음 세션 핸드오프
 
 **마지막 작업 기준일**: 2026-04-29
-**Repo 상태**: PRIVATE on GitHub, main 이 origin/main 보다 6 commit 앞섬 (push 보류 — 아래 "push 전 결정 사항" 참조)
+**Repo 상태**: PRIVATE on GitHub, main = origin/main (push 게이트 해제 후 동기화 완료)
 
 ---
 
@@ -37,31 +37,26 @@
 
 ---
 
-## ⚠️ push 전 결정 사항 — 하드코딩된 OAuth 자격증명 (P0)
+## ✅ push 게이트 해제 — soul-keeper 자격증명 회수 완료 (2026-04-29)
 
-`application*.yml` line 33-34 / 18-19 + `index.html:283` / `echo-config.html:85` 에 다음 값이 하드코딩됨:
+`application*.yml` 과 두 thymeleaf template 에 `soul-keeper-client` / `soul-keeper-secret` 가 하드코딩되어 있으나, 별도 세션에서 echo-server 측 자격증명이 회수됨. 사용자 보고 + 본 repo 에서 직접 검증 완료:
 
 ```
-client-id: soul-keeper-client
-client-secret: soul-keeper-secret
+POST https://echo-server.omnibuscode.com/oauth2/token  →  HTTP 401 invalid_client
 ```
 
-부팅 검증 시 이 값들로 echo-server.omnibuscode.com OAuth2 토큰이 **실제로 발급됨** — 즉 유효한 공유 자격증명. 사용자 정책 (2026-04-29 오후 결정):
-
-> "기존 레거시 코드이지만 muse2 에서는 사용 가이드로 코드를 남기고, 운영중인 echo 에서 해당 인증 정보를 지우는 것만으로 해소. 작업은 다른 세션에서 진행 중."
-
-→ **다른 세션에서 echo-server 의 `soul-keeper-client` 자격증명이 회수된 후** muse 측 push 진행. 그 전까지 push 금지.
+→ muse 측 코드는 사용 가이드 차원에서 그대로 유지, 자격증명은 dead. 7 commit (`ca31123..352c790`) origin/main 에 push 완료.
 
 ---
 
 ## 다음에 할 수 있는 일
 
-### A. Public 전환 준비 (보류 중)
-- 위 OAuth 자격증명 회수 완료 확인
-- 한 번 더 보안 grep — RB / FAINT_THREAD / Home Nudge / 운영 정보
-- `bat/deploy.bat` 실행해 ZIP 검증
-- 브라우저로 dashboard smoke test
-- 준비 완료되면 GitHub UI 에서 visibility public 전환
+### A. Public 전환 준비
+- ~~OAuth 자격증명 회수 완료 확인~~ ✅ (2026-04-29 완료)
+- ~~보안 grep (RB / FAINT_THREAD / Home Nudge / 운영 정보)~~ ✅ — `Home-nudge` 옛 코드네임 i18n+로그 14곳 → `Echo-note` 정리
+- ~~`bat/deploy.bat` ZIP 검증~~ ✅ — `service\logs\*` cleanup 누락 발견 (호스트명·split 전 경로 노출), 패치 + 로컬 로그 삭제 후 재빌드 검증
+- ~~브라우저 dashboard smoke test~~ — string-only 변경이라 boot/route 회귀 가능성 0 으로 판단, skip
+- **남은 일**: GitHub UI 에서 visibility public 전환 (사용자 직접)
 
 ### B. echo external API versioning — 후속 (echo-server 측 작업 후)
 - echo-server 가 `/v1/` prefix 도입하면:
@@ -77,6 +72,7 @@ client-secret: soul-keeper-secret
 ### D. 코드 위생 — 잔여
 - `if-only/muse-agent/README.md` (legacy repo) 에 archive 헤더 추가 — 본 working dir 가 아닌 별도 repo 작업 필요
 - `bat/run.bat` 의 매 실행 `gradlew clean bootRun` — 사용자 정책상 그대로 유지 (테스트용)
+- `bat/deploy.bat` 의 VERSION-INFO 안 `Git Commit: unknown` — cmd 환경에서 git PATH 없을 때 fallback. traceability 만 영향, 보안 무관
 
 ### E. 기능 추가·개선
 - 사용자 추가 시 갱신
@@ -100,9 +96,8 @@ client-secret: soul-keeper-secret
 다음 세션 시작 시:
 1. `cd C:\Users\11A\DEV\github\ifonly.muse`
 2. `git status` — 클린 확인
-3. `git log --oneline -10` — 마지막 commit 이 본 문서 commit 인지 확인
+3. `git log --oneline -10` — 마지막 commit 확인
 4. `git remote -v` — origin 이 `kiunsea/ifonly.muse` 인지 확인
-5. **OAuth 자격증명 회수 별도 세션 상태 확인** — 회수 완료 시에만 push 진행
 
 ---
 
@@ -112,4 +107,3 @@ client-secret: soul-keeper-secret
 - ❌ Faint Thread / Relation Bridge / AI 시스템 프롬프트 / 운영 정보 를 ifonly.muse 에 노출
 - ❌ public 전환 후 IP 누출 검출 시: force-push 로 history rewrite 시도 (cached fork 가 남을 수 있음)
 - ❌ DEVLOG.md 또는 if-only 의 doc/design/ 자산을 ifonly.muse 로 복사
-- ❌ **`soul-keeper-client` 자격증명이 echo 측에서 회수되기 전 main 을 origin 에 push**
