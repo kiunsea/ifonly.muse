@@ -5,9 +5,13 @@
 
 ---
 
-## Unreleased
+## v2.1.0 (2026-05-02) — Echo Note preview UX 개선 + ↔ echo-server 정합 강화
 
-> v2.0.0 첫 공개 릴리즈 이후 누적된 미커밋 변경. 다음 commit·release 시점에 정식 버전 태그 부여 예정.
+### Echo Note 작성 form 의 preview UX
+
+- **첫 preview 401 race 해결** — 사용자가 popup 의 PC 보관 분기를 처음 진입한 직후 첫 preview 호출이 옛/캐시된 자격증명으로 시도되어 401 → stub fallback 으로 굳던 문제. `EchoCredentialUpdater` 가 token cache invalidation 시 principalName 후보 다중 시도 (`anonymousUser` / registrationId / clientId) + `block()` 동기 처리로 race 제거. continuation exchange 직후 첫 echo API 호출이 항상 새 credential 사용.
+- **작성 form 인라인 미리보기 ([미리보기 ✨] 버튼)** — 보관 결정 *전* 에 echo 가공본을 미리 확인할 수 있는 흐름. DB 저장 없이 stateless preview 호출 (`POST /api/echo-note-messages/preview-only`). 결과는 form 아래 인라인 카드로 표시 — stub fallback 시 노란 배너 + 사유 + [다시 시도] / [이대로 보관] / [닫기]. 이전엔 보관함 row 의 [수정] 모달을 명시적으로 열어야만 결과 텍스트를 볼 수 있어 "프리뷰 기능의 존재를 인지하기 어렵다" 는 회귀 해소.
+- **자동 preview (보관 직후)** — [메시지 보관] 클릭 시 save 후 자동으로 가공본 받아 인라인 카드 *정보 모드* 로 표시 ([닫기] 만 노출, reload trigger). 사용자가 명시적으로 [미리보기 ✨] 누르지 않아도 "이렇게 가공돼요" 가 첫 보관 흐름에서 즉시 보이도록.
 
 ### UI/UX 리팩토링
 

@@ -6,6 +6,56 @@
 
 ---
 
+## 2026-05-02 — v2.1.0 release: Echo Note preview UX 개선
+
+### 배경
+
+사용자 검증 사이클에서 다음 세 문제가 한 흐름으로 보고됨:
+
+1. **첫 preview 가 stub 으로 굳음** — popup 의 PC 보관 분기 첫 진입 직후 작성한 메시지의 [프리뷰] 응답이 `[stub 폴백 — echo 미연결]` 로 떨어지고, 그 후엔 재호출이 없어 화면에 그대로 남음. echo 의 alive-check 는 정상 200 받는 상태라 자격증명 자체는 제대로 받았으나 첫 preview 호출만 401.
+2. **프리뷰 결과 가시성 부재** — 정상 응답이어도 결과는 보관함 row 의 badge 색깔 변경 + [수정] 모달 안의 textarea 로만 표시. 사용자가 모달을 명시적으로 열어야만 본문 확인 가능.
+3. **트리거 인터페이스 부재** — 작성 form 에 [메시지 보관] 만 있어 사용자가 "프리뷰 기능이 존재한다" 는 사실 자체를 인지 못 함. 보관함 row 의 [프리뷰] 버튼이라는 우회 동선을 알아내야 했음.
+
+### 진단
+
+- Cloud Run access log 에서 첫 issue 의 시간 순서: `10:20:20 401 /preview` (옛 token) → `10:20:21 200 /exchange-continuation-token` (새 credential 발급). 즉 **사용자가 popup 의 PC 보관 분기를 시작하는 시점에 muse 가 옛/캐시된 credential 로 preview 를 한 번 시도** → 401 → stub fallback 으로 화면에 굳음. 이후 새 credential 받아도 preview 재호출이 없어 stub 그대로.
+- `EchoCredentialUpdater.onCredentialsChanged()` 가 호출되긴 하나 `removeAuthorizedClient(REGISTRATION_ID, REGISTRATION_ID)` 의 두 번째 인자 (principalName) 가 실제 저장된 cache 키와 불일치. Spring Security 의 `ServerOAuth2AuthorizedClientExchangeFilterFunction` 이 client_credentials grant 에서 사용하는 default principalName 은 **`"anonymousUser"`** — 코드는 `"echo-server"` 만 시도해 실제 cache 가 비워지지 않음. 옛 token 이 TTL 1시간 동안 cache 에 살아남아 후속 호출이 모두 옛 credential 로 진행 → 401.
+
+### 구현
+
+#### A. EchoCredentialUpdater — token cache invalidation race 해결
+
+- principalName 후보 다중 시도: `anonymousUser` / registrationId / clientId
+- `block()` 동기 처리 — 비동기 `subscribe()` 에서는 다음 호출이 cache invalidation 끝나기 전에 들어가는 race 가능
+- 후보 모두 비우므로 어떤 키로 저장됐든 invalidate 보장
+
+#### B. 작성 form 인라인 미리보기
+
+- `EchoNotePreviewGenerator.PreviewResult` record + `generateDetailed()` — text 와 함께 `stubFallback` boolean + `fallbackReason` 노출
+- `EchoNoteMessageService.previewOnly(originalMessage, locale)` — DB 저장 없이 가공본만 반환 (사용자가 보관 결정 전에 미리 확인)
+- `EchoNoteMessageController` 에 `POST /api/echo-note-messages/preview-only` endpoint
+- `templates/echo-note.html` 작성 form 에 [미리보기 ✨] 버튼 + form 아래 인라인 결과 카드 (textarea + stub 경고 배너 + [다시 시도] / [이대로 보관] / [닫기])
+- `static/js/echo-note.js` 의 `hnPreviewOnly()` / `hnAcceptPreview()` / `hnDiscardPreview()` 핸들러
+- i18n 4 locale (default + ko + en + ja) 새 키 13개
+
+#### C. 자동 preview (보관 직후)
+
+- `hnCreate()` 가 save 성공 후 자동으로 `/preview` 호출 → 인라인 카드 *정보 모드* 로 표시. [이대로 보관] / [다시 시도] hide, [닫기] 만 노출 — [닫기] 가 reload trigger
+- stub heuristic — saved preview 응답엔 stubFallback 플래그가 없어서 텍스트의 `[stub` prefix 로 추정 (한·영·일 모두 동일 prefix)
+- card 의 `data-mode` attribute 로 수동/자동 모드 분기
+
+### 검증
+
+- 로컬 빌드 + 테스트 통과 (단, 첫 시도에 ScheduleExecutorService 테스트가 Mockito inline mock maker 의 ClassLoader race 로 일시 fail — 두 번째 시도엔 통과. JVM 21 + Mockito 의 pre-existing flaky 패턴, 본 변경분 무관)
+- echo-server 측은 변경 없음 — `/api/external/echo-note/preview` 그대로 사용
+
+### 알려진 한계 / 후속
+
+- `static/js/echo-note.js` 의 stub heuristic 이 텍스트 prefix 검사라 fragile. 견고하게 하려면 `service.generatePreview(id)` 도 `PreviewResult` 형태로 응답 + controller 응답에 stubFallback 키 추가 필요. 다음 사이클로 미룸.
+- 보관함 row 의 [프리뷰] 재생성도 인라인 카드와 통합하면 일관된 UX. 현재는 별도 모달 흐름 — 다음 사이클로.
+
+---
+
 ## 2026-05-01 — Track F: Echo Note ↔ echo-server 정합 강화
 
 `if-only/echo-server` 의 `ExternalEchoNoteController` 와 muse 의 `EchoServerClient` / `EchoContinuationExchangeService` 양측 contract 를 cross-read 한 뒤 4개 보강 항목을 일괄 적용. 다음 세션에서 commit 전략 결정.
