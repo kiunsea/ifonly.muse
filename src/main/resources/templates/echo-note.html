@@ -119,9 +119,35 @@
                         <textarea id="hnOriginalMessage" class="en-textarea" th:placeholder="#{page.echo_note.ph.message}" required></textarea>
                     </div>
                     <div class="button-group">
+                        <button type="button" id="hnBtnPreview" class="btn btn-info" onclick="hnPreviewOnly()" th:text="#{page.echo_note.btn.preview_inline}">미리보기 ✨</button>
                         <button type="submit" id="hnBtnCreate" class="btn btn-primary" th:text="#{page.echo_note.btn.create}">메시지 보관</button>
                     </div>
+                    <p class="form-help" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 8px;" th:text="#{page.echo_note.help.preview_inline}">[미리보기 ✨] 는 echo 가공본을 발송 결정 전에 미리 확인할 수 있어요. 메시지는 아직 보관되지 않아요.</p>
                 </form>
+            </section>
+
+            <!-- 인라인 미리보기 결과 — [미리보기 ✨] 클릭 후 표시 (B 도입) -->
+            <section class="card hidden" id="hnPreviewCard">
+                <h2 th:text="#{page.echo_note.section.preview_inline}">미리보기</h2>
+
+                <!-- stub fallback 경고 (echo 미연결 등) -->
+                <div id="hnPreviewWarn" class="form-help hidden"
+                     style="background: rgba(255, 193, 7, 0.12); border: 1px solid rgba(255, 193, 7, 0.4); color: var(--warning-color, #b08000); padding: 10px 12px; border-radius: 8px; margin-bottom: 12px;">
+                    <strong th:text="#{page.echo_note.preview_inline.warn.title}">echo 와 연결되지 않았어요</strong>
+                    <span id="hnPreviewWarnReason"></span>
+                    <p style="margin: 6px 0 0; font-size: 0.85rem;" th:text="#{page.echo_note.preview_inline.warn.body}">자격증명을 점검하시거나 다시 시도해주세요. 지금 보이는 건 echo 가공본이 아닌 로컬 stub 표시예요.</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="hnPreviewText" class="form-label" th:text="#{page.echo_note.preview_inline.label.text}">가공된 미리보기</label>
+                    <textarea id="hnPreviewText" class="en-textarea" rows="8" readonly></textarea>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn btn-secondary" onclick="hnPreviewOnly()" th:text="#{page.echo_note.preview_inline.btn.retry}">다시 시도</button>
+                    <button type="button" class="btn btn-primary" onclick="hnAcceptPreview()" th:text="#{page.echo_note.preview_inline.btn.accept}">이대로 보관</button>
+                    <button type="button" class="btn" onclick="hnDiscardPreview()" th:text="#{page.echo_note.preview_inline.btn.discard}">닫기</button>
+                </div>
             </section>
 
             <!-- 보관함 -->
@@ -131,6 +157,41 @@
                     <p th:text="#{page.echo_note.empty.title}">보관된 메시지가 없어요.</p>
                     <p style="margin-top: 8px; font-size: 0.9rem;" th:text="#{page.echo_note.empty.subtitle}">위에서 새 메시지를 작성해주세요.</p>
                 </div>
+
+                <!-- Phase 4: 검색 + 상태 필터 + 정렬 toolbar -->
+                <div class="en-toolbar" th:if="${!#lists.isEmpty(messages)}">
+                    <input type="search" id="hnSearchInput" class="en-search-input"
+                           th:placeholder="#{page.echo_note.toolbar.search_ph}"
+                           placeholder="받는 분 또는 메시지 본문으로 검색" />
+                    <div class="en-filter-chips" role="tablist">
+                        <button class="en-chip is-active" data-filter="ALL" type="button"
+                                onclick="hnSetFilter(this, 'ALL')"
+                                th:text="#{page.echo_note.toolbar.filter_all}">전체</button>
+                        <button class="en-chip" data-filter="DRAFT" type="button"
+                                onclick="hnSetFilter(this, 'DRAFT')">
+                            <span th:text="#{page.echo_note.status.draft}">초안</span>
+                            <span class="en-chip-count" id="hnCountDraft">0</span>
+                        </button>
+                        <button class="en-chip" data-filter="READY" type="button"
+                                onclick="hnSetFilter(this, 'READY')">
+                            <span th:text="#{page.echo_note.status.ready}">마침 처리됨</span>
+                            <span class="en-chip-count" id="hnCountReady">0</span>
+                        </button>
+                        <button class="en-chip" data-filter="SENT" type="button"
+                                onclick="hnSetFilter(this, 'SENT')">
+                            <span th:text="#{page.echo_note.status.sent}">닿았어요</span>
+                            <span class="en-chip-count" id="hnCountSent">0</span>
+                        </button>
+                    </div>
+                    <select id="hnSortSelect" class="en-sort-select" onchange="hnApplyFilter()">
+                        <option value="created-desc" th:text="#{page.echo_note.toolbar.sort_created_desc}">최근 작성순</option>
+                        <option value="created-asc" th:text="#{page.echo_note.toolbar.sort_created_asc}">오래된 작성순</option>
+                        <option value="updated-desc" th:text="#{page.echo_note.toolbar.sort_updated_desc}">최근 수정순</option>
+                        <option value="recipient" th:text="#{page.echo_note.toolbar.sort_recipient}">받는 분 가나다순</option>
+                    </select>
+                    <span id="hnFilteredCount" class="en-filtered-count">—</span>
+                </div>
+
                 <table class="en-table" th:if="${!#lists.isEmpty(messages)}">
                     <thead>
                         <tr>
@@ -142,7 +203,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr th:each="m : ${messages}">
+                        <tr th:each="m : ${messages}"
+                            th:attr="data-status=${m.status},
+                                     data-recipient=${m.recipientEmail},
+                                     data-message=${m.originalMessage},
+                                     data-created=${m.createdAt != null ? m.createdAt.toString() : ''},
+                                     data-updated=${m.updatedAt != null ? m.updatedAt.toString() : ''}">
                             <td class="en-recipient" th:text="${m.recipientEmail}"></td>
                             <td class="en-message-preview" th:text="${m.originalMessage}"></td>
                             <td>
@@ -222,7 +288,13 @@
             finalized: /*[[#{page.echo_note.msg.finalized}]]*/ '마침 처리되었어요.',
             reverted: /*[[#{page.echo_note.msg.reverted}]]*/ '초안으로 되돌렸어요.',
             deleted: /*[[#{page.echo_note.msg.deleted}]]*/ '삭제되었어요.',
-            errorPrefix: /*[[#{page.echo_note.msg.error_prefix}]]*/ '오류: '
+            errorPrefix: /*[[#{page.echo_note.msg.error_prefix}]]*/ '오류: ',
+            countSuffix: /*[[#{page.echo_note.toolbar.count_suffix}]]*/ '개',
+            noResults: /*[[#{page.echo_note.toolbar.no_results}]]*/ '조건에 맞는 메시지가 없어요.',
+            previewInlineMissing: /*[[#{page.echo_note.preview_inline.msg.missing}]]*/ '메시지 본문을 입력해주세요.',
+            previewInlineLoading: /*[[#{page.echo_note.preview_inline.msg.loading}]]*/ '미리보기를 만들고 있어요...',
+            previewInlineFallbackReason: /*[[#{page.echo_note.preview_inline.msg.fallback_reason_prefix}]]*/ ' (사유: ',
+            previewInlineFallbackReasonSuffix: /*[[#{page.echo_note.preview_inline.msg.fallback_reason_suffix}]]*/ ')'
         };
         window.ECHO_NOTE_LOCALE = /*[[${#locale.language}]]*/ 'ko';
     </script>

@@ -24,57 +24,136 @@
                     </h1>
                     <p class="subtitle" th:text="#{page.dashboard.subtitle}">Echo Server 통신 관리자</p>
                 </div>
-                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                    <!-- 액션 버튼 그룹: 가이드 시작 / 도움말 보기 / 모두 접기 — 한 줄 유지 -->
-                    <div class="muse-action-group">
-                        <button id="btnStartGuide" class="btn btn-outline btn-sm" type="button"
-                            th:attr="data-help-title=#{tour.muse.guide.title},data-help-desc=#{tour.muse.guide.desc},data-help-placement='bottom'"
-                            th:text="#{nav.guide_start}">가이드 시작</button>
-                        <button id="btnHelpMode" class="btn btn-outline btn-sm btn-help-toggle" type="button" data-help-toggle="true"
-                            th:attr="data-label-show=#{page.help.toggle.show},data-label-hide=#{page.help.toggle.hide}"
-                            th:text="#{page.help.toggle.show}">도움말 보기</button>
-                        <button id="btnToggleAll" class="btn btn-sm" onclick="toggleAllCards()" style="background-color: transparent; color: var(--warning-color); border: 1px solid var(--warning-color); font-weight: 600;"
-                            th:attr="data-help-title=#{help.dashboard.collapse_toggle.title},data-help-desc=#{help.dashboard.collapse_toggle.desc},data-help-placement='bottom'"
-                            th:text="#{page.dashboard.collapse_all}">모두 접기</button>
-                    </div>
-                    <div class="lang-switcher">
-                        <a href="#" id="museThemeToggle" onclick="(function(){var cur=document.documentElement.dataset.theme==='dark'?'dark':'soft';var t=cur==='dark'?'soft':'dark';localStorage.setItem('theme-preference',t);if(t==='soft')document.documentElement.removeAttribute('data-theme');else document.documentElement.dataset.theme=t;fetch('/api/settings/theme',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({theme:t})}).catch(function(){});})()" th:text="#{nav.theme}">테마</a>
-                    </div>
-                    <!-- 언어 콤보 드롭다운 (echo-server 와 동일 패턴) -->
-                    <div class="lang-menu-combo">
-                        <button id="langMenuToggle" type="button" class="btn btn-outline btn-sm lang-menu-toggle" onclick="toggleLangMenu(event)">
-                            <span th:text="#{nav.language}">언어</span>
-                            <span class="caret">▾</span>
-                        </button>
-                        <div class="nav-dropdown lang-menu-dropdown" id="langDropdown" style="display:none;">
-                            <a class="nav-dropdown-item" th:href="@{''(lang='ko')}" onclick="closeLangMenu()" th:text="#{nav.lang.ko}">한국어</a>
-                            <a class="nav-dropdown-item" th:href="@{''(lang='en')}" onclick="closeLangMenu()" th:text="#{nav.lang.en}">EN</a>
-                            <a class="nav-dropdown-item" th:href="@{''(lang='ja')}" onclick="closeLangMenu()" th:text="#{nav.lang.ja}">日本語</a>
+                <div class="muse-action-group">
+                    <!-- 더보기 (⋯): 가이드 / 도움말 / 테마 / 언어 묶음. 클릭 시 확장. -->
+                    <div class="muse-more-menu">
+                        <button id="btnMoreMenu" type="button" class="btn btn-outline btn-sm muse-more-toggle"
+                                onclick="toggleMoreMenu(event)"
+                                th:attr="title=#{nav.more_menu.tooltip}"
+                                title="더보기">⋯</button>
+                        <div class="muse-more-dropdown" id="moreMenuDropdown" style="display:none;">
+                            <a href="#" id="museThemeToggle" class="muse-more-item"
+                               onclick="(function(){var cur=document.documentElement.dataset.theme==='dark'?'dark':'soft';var t=cur==='dark'?'soft':'dark';localStorage.setItem('theme-preference',t);if(t==='soft')document.documentElement.removeAttribute('data-theme');else document.documentElement.dataset.theme=t;fetch('/api/settings/theme',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({theme:t})}).catch(function(){});})();closeMoreMenu();return false;"
+                               th:text="#{nav.theme}">테마</a>
+                            <div class="muse-more-divider"></div>
+                            <a class="muse-more-item" th:href="@{''(lang='ko')}" onclick="closeMoreMenu()" th:text="#{nav.lang.ko}">한국어</a>
+                            <a class="muse-more-item" th:href="@{''(lang='en')}" onclick="closeMoreMenu()" th:text="#{nav.lang.en}">EN</a>
+                            <a class="muse-more-item" th:href="@{''(lang='ja')}" onclick="closeMoreMenu()" th:text="#{nav.lang.ja}">日本語</a>
                         </div>
                     </div>
+                    <!-- ⚙️ 시스템 패널 토글 (단독 노출 유지) -->
+                    <button id="btnSystemPanel" class="btn btn-outline btn-sm btn-system-panel" type="button"
+                            onclick="toggleSystemPanel()"
+                            th:attr="title=#{nav.system_panel.tooltip}"
+                            title="시스템 · 설정">⚙️</button>
                 </div>
             </div>
         </header>
 
         <main>
-            <!-- Echo Note Section (top-level card; moved from Admin > Task Management) -->
-            <section class="card collapsible-card" data-card-id="echo-note"
-                th:attr="data-help-title=#{page.dashboard.section.echo_note},data-help-desc=#{page.dashboard.echo_note.summary},data-help-placement='bottom'">
-                <div class="card-header" onclick="toggleCard('echo-note')">
-                    <h2 th:text="#{page.dashboard.section.echo_note}">Echo Note 보관함</h2>
-                    <span class="collapse-icon">&#9660;</span>
+            <!-- Echo Note Hero (Phase 3) — 메인 = 마음의 울림 보관함 요약 뷰 -->
+            <section class="echo-note-hero">
+                <p class="echo-note-state-line">
+                    <span th:text="#{page.dashboard.echo_note.state.holding(${echoNoteHoldingCount})}">보관 중인 메시지 0개</span>
+                    <span class="echo-note-state-sep">·</span>
+                    <span th:text="#{page.dashboard.echo_note.state.sent(${echoNoteSentCount})}">닿은 메시지 0개</span>
+                </p>
+
+                <div class="echo-note-actions">
+                    <button type="button" class="btn btn-primary echo-note-btn-compose" onclick="openComposeModal()"
+                            th:text="#{page.dashboard.echo_note.btn.compose}">＋ 새로 보관하기</button>
+                    <a href="/echo-note?focus=search" class="btn btn-outline echo-note-btn-search"
+                       th:text="#{page.dashboard.echo_note.btn.search}">🔍 검색</a>
                 </div>
-                <div class="card-content">
-                    <div class="info-grid">
-                        <div class="info-item full-width">
-                            <span class="label" th:text="#{page.dashboard.label.privacy}">강화 privacy</span>
-                            <span class="value" th:text="#{page.dashboard.echo_note.summary}">echo-server 가 아닌 사용자 PC 에 보관되는 echo-note 메시지를 관리해요.</span>
+
+                <!-- 빈 보관함 -->
+                <div th:if="${#lists.isEmpty(recentEchoNotes)}" class="echo-note-empty">
+                    <img class="echo-note-empty-icon" th:src="@{/img/muse-agent.svg(v=${appVersion})}" alt="">
+                    <p class="echo-note-empty-msg" th:text="#{page.dashboard.echo_note.empty}">조용한 보관함입니다.</p>
+                    <p class="echo-note-empty-sub" th:text="#{page.dashboard.echo_note.empty.sub}">언젠가 누군가에게 닿을 첫 메시지를 작성해 보세요.</p>
+                </div>
+
+                <!-- 메시지 카드 목록 (최근 5건) -->
+                <div th:unless="${#lists.isEmpty(recentEchoNotes)}" class="echo-note-messages">
+                    <article th:each="msg : ${recentEchoNotes}"
+                             class="echo-note-msg"
+                             th:classappend="${msg.status == 'DRAFT' ? 'is-draft' : (msg.status == 'READY' ? 'is-ready' : 'is-sent')}"
+                             th:attr="data-msg-id=${msg.id}"
+                             th:onclick="'window.location.href=\'/echo-note?id=' + ${msg.id} + '\''">
+                        <div class="echo-note-msg-top">
+                            <span class="echo-note-marker"></span>
+                            <span class="echo-note-status-label"
+                                  th:text="${msg.status == 'DRAFT' ? #{page.dashboard.echo_note.status.draft}
+                                          : (msg.status == 'READY' ? #{page.dashboard.echo_note.status.ready}
+                                          : #{page.dashboard.echo_note.status.sent})}">초안</span>
+                            <span th:if="${msg.status == 'SENT' and msg.sentAt != null}" class="echo-note-msg-date">
+                                · <span th:text="${#temporals.format(msg.sentAt, 'M월 d일')}">3월 14일</span>
+                            </span>
+                            <span th:if="${msg.status == 'DRAFT' and msg.updatedAt != null}" class="echo-note-msg-date">
+                                · <span th:text="${#temporals.format(msg.updatedAt, 'M월 d일 편집')}">4월 18일 편집</span>
+                            </span>
                         </div>
+                        <div class="echo-note-msg-recipient">
+                            <span class="echo-note-msg-recipient-key" th:text="#{page.dashboard.echo_note.recipient_label}">받는 분</span>
+                            <span class="echo-note-msg-recipient-mail"
+                                  th:with="email=${msg.recipientEmail},atIdx=${email != null ? email.indexOf('@') : -1}"
+                                  th:text="${atIdx > 0 ? email.substring(0,1) + '***' + email.substring(atIdx) : '—'}">m***@gmail.com</span>
+                        </div>
+                        <div class="echo-note-msg-preview" th:text="${#strings.abbreviate(msg.originalMessage, 100)}">메시지 미리보기 텍스트</div>
+                    </article>
+
+                    <div class="echo-note-see-all">
+                        <a href="/echo-note" th:text="#{page.dashboard.echo_note.see_all}">전체 보관함 보기 →</a>
                     </div>
-                    <a id="btnManageEchoNote" href="/echo-note" class="btn btn-primary" style="margin-top: 15px;"
-                        th:text="#{page.dashboard.btn.manage_echo_note}">Echo Note 관리</a>
                 </div>
             </section>
+
+        </main>
+
+        <!-- Phase 5a: footer 시스템 상태 한 줄. 정상 시 회색, 이상 시 자동 색 강화. 클릭 시 시스템 패널 열림. -->
+        <footer class="muse-footer-bar">
+            <button type="button" class="muse-footer-status" onclick="toggleSystemPanel()"
+                    th:classappend="${deviceStatus.registered ? 'is-ok' : 'is-warn'}">
+                <span class="muse-footer-dot" id="footerEchoDot"></span>
+                <span id="footerEchoStatusText" th:text="#{page.dashboard.footer.echo_checking}">Echo Server 확인 중…</span>
+                <span class="muse-footer-sep">·</span>
+                <span th:if="${deviceStatus.registered}" th:text="#{page.dashboard.footer.device_registered}">디바이스 등록됨</span>
+                <span th:unless="${deviceStatus.registered}" class="muse-footer-warn-text" th:text="#{page.dashboard.footer.device_not_registered}">디바이스 미등록</span>
+                <span class="muse-footer-sep">·</span>
+                <span>v<span th:text="${appVersion}">0.1.0</span></span>
+                <span class="muse-footer-caret">▸</span>
+            </button>
+            <p class="muse-footer-copyright">&copy; 2026 if-only Project</p>
+        </footer>
+    </div>
+
+    <!-- Floating TOP Button -->
+    <button id="btnTop" class="btn-top" onclick="scrollToTop()" title="Go to top">&#9650; TOP</button>
+
+    <!-- System Panel — Phase 2 이주 완료. 패널 내부에 5개 시스템 카드 (안부 신호/작업 이력/Echo Server 설정/디바이스/파일 정리/시스템 정보). -->
+    <div id="museSystemPanelOverlay" class="muse-system-panel-overlay" aria-hidden="true"></div>
+    <aside id="museSystemPanel" class="muse-system-panel" role="dialog"
+           aria-labelledby="museSystemPanelTitle" aria-hidden="true">
+        <div class="muse-system-panel-header">
+            <h2 id="museSystemPanelTitle" th:text="#{nav.system_panel.title}">⚙️ 시스템 · 설정</h2>
+            <button class="muse-system-panel-close" type="button" onclick="closeSystemPanel()"
+                    th:text="#{nav.system_panel.close}">✕ 닫기</button>
+        </div>
+
+        <!-- 도구 줄 (sticky): 가이드 / 도움말 / 모두 접기 — 헤더 아래, 본문 위. -->
+        <div class="muse-system-panel-tools">
+            <button id="btnStartGuide" class="btn btn-outline btn-sm" type="button"
+                th:attr="data-help-title=#{tour.muse.guide.title},data-help-desc=#{tour.muse.guide.desc},data-help-placement='bottom'"
+                th:text="#{nav.guide_start}">가이드 시작</button>
+            <button id="btnHelpMode" class="btn btn-outline btn-sm btn-help-toggle" type="button" data-help-toggle="true"
+                th:attr="data-label-show=#{page.help.toggle.show},data-label-hide=#{page.help.toggle.hide}"
+                th:text="#{page.help.toggle.show}">도움말 보기</button>
+            <button id="btnToggleAll" class="btn btn-sm muse-system-panel-toggle-all" type="button" onclick="toggleAllCards()"
+                    th:attr="data-help-title=#{help.dashboard.collapse_toggle.title},data-help-desc=#{help.dashboard.collapse_toggle.desc},data-help-placement='bottom'"
+                    th:text="#{page.dashboard.collapse_all}">모두 접기</button>
+        </div>
+
+        <div class="muse-system-panel-body">
 
             <!-- Status Section (Current Status) -->
             <section class="card collapsible-card" id="statusSection" data-card-id="current-status"
@@ -98,20 +177,20 @@
                 th:attr="data-help-title=#{tour.muse.alive.title},data-help-desc=#{tour.muse.alive.desc},data-help-placement='bottom'">
                 <div class="card-header" onclick="toggleCard('alive-status')">
                     <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                        <h2 th:text="#{page.dashboard.section.alive_status}">생존 신호 상태</h2>
+                        <h2 th:text="#{page.dashboard.section.alive_status}">안부 신호 상태</h2>
                         <span id="aliveStatusBadge" style="background-color: rgba(40, 167, 69, 0.2); color: var(--success-color); padding: 4px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; margin-right: 15px;">-</span>
                     </div>
                     <span class="collapse-icon">&#9660;</span>
                 </div>
                 <div class="card-content">
                 <div id="aliveStatusContent" class="status-content">
-                    <p class="status-message" th:text="#{page.dashboard.loading_alive}">생존 신호 상태 로딩 중...</p>
+                    <p class="status-message" th:text="#{page.dashboard.loading_alive}">안부 신호 상태 로딩 중...</p>
                 </div>
                 <div class="test-buttons" style="margin-top: 15px;">
                     <button id="btnRefreshAlive" class="btn btn-info" onclick="refreshAliveStatus()"
                             th:attr="data-help-title=#{help.dashboard.refresh_alive.title},data-help-desc=#{help.dashboard.refresh_alive.desc},data-help-placement='top'"
                             th:text="#{page.dashboard.btn.refresh_alive}">
-                        생존 신호 상태 갱신
+                        안부 신호 상태 갱신
                     </button>
                     <button id="btnAliveHistory" class="btn btn-secondary" onclick="loadAliveHistory()"
                             th:attr="data-help-title=#{help.dashboard.alive_history.title},data-help-desc=#{help.dashboard.alive_history.desc},data-help-placement='top'"
@@ -283,7 +362,7 @@
                         <span class="value" th:text="${echoServerClientId}">soul-keeper-client</span>
                     </div>
                     <div class="info-item">
-                        <span class="label" th:text="#{page.dashboard.label.alive_status_api}">생존 상태 API</span>
+                        <span class="label" th:text="#{page.dashboard.label.alive_status_api}">안부 상태 API</span>
                         <span class="value">/api/alive/status</span>
                     </div>
                 </div>
@@ -298,7 +377,7 @@
 
             <!-- Device Management Section -->
             <section class="card collapsible-card" data-card-id="device-mgmt"
-                th:attr="data-help-title=#{tour.muse.device.title},data-help-desc=#{tour.muse.device.desc},data-help-placement='bottom'">
+                th:attr="data-help-title=#{tour.muse.device.title},data-help-desc=#{tour.muse.device.desc},data-help-placement='bottom',data-device-registered=${deviceStatus.registered}">
                 <div class="card-header" onclick="toggleCard('device-mgmt')">
                     <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                         <h2 th:text="#{page.dashboard.section.device_mgmt}">디바이스 관리</h2>
@@ -350,15 +429,39 @@
                 </div>
             </section>
             <!-- /Admin Section -->
-        </main>
 
-        <footer>
-            <p>&copy; 2026 if-only Project. Muse Agent v<span th:text="${appVersion}">0.1.0</span></p>
-        </footer>
+        </div>
+    </aside>
+
+    <!-- Compose Modal (Phase 3 — Echo Note 새 메시지 작성) -->
+    <div id="composeModalOverlay" class="compose-modal-overlay" aria-hidden="true">
+        <div class="compose-modal" role="dialog" aria-labelledby="composeModalTitle">
+            <div class="compose-modal-head">
+                <h3 id="composeModalTitle" th:text="#{page.dashboard.echo_note.compose.title}">새로 보관하기</h3>
+                <button type="button" class="compose-modal-close" onclick="closeComposeModal()"
+                        th:text="#{page.dashboard.echo_note.compose.close}">✕ 닫기</button>
+            </div>
+            <form class="compose-modal-body" onsubmit="event.preventDefault(); submitNewMessage();">
+                <label for="composeRecipient" th:text="#{page.dashboard.echo_note.compose.recipient}">받는 분 이메일</label>
+                <input type="email" id="composeRecipient" required
+                       th:placeholder="#{page.dashboard.echo_note.compose.recipient_ph}" placeholder="example@domain.com" />
+
+                <label for="composeMessage" th:text="#{page.dashboard.echo_note.compose.message}">메시지 본문</label>
+                <textarea id="composeMessage" required
+                          th:placeholder="#{page.dashboard.echo_note.compose.message_ph}" placeholder="언젠가 그분께 닿을 말을 적어 주세요."></textarea>
+
+                <p class="compose-modal-hint" th:text="#{page.dashboard.echo_note.compose.hint}">
+                    작성한 메시지는 이 PC 의 muse-agent 에 보관돼요.
+                </p>
+            </form>
+            <div class="compose-modal-foot">
+                <button type="button" class="btn btn-secondary" onclick="closeComposeModal()"
+                        th:text="#{page.dashboard.echo_note.compose.cancel}">취소</button>
+                <button type="button" class="btn btn-primary" onclick="submitNewMessage()"
+                        th:text="#{page.dashboard.echo_note.compose.submit}">보관</button>
+            </div>
+        </div>
     </div>
-
-    <!-- Floating TOP Button -->
-    <button id="btnTop" class="btn-top" onclick="scrollToTop()" title="Go to top">&#9650; TOP</button>
 
     <script th:inline="javascript">
     /*<![CDATA[*/
@@ -372,10 +475,10 @@
         lastConfirmed: /*[[#{page.dashboard.js.last_confirmed}]]*/ '마지막 확인',
         nextDeadline: /*[[#{page.dashboard.js.next_deadline}]]*/ '다음 데드라인',
         ttl: /*[[#{page.dashboard.js.ttl}]]*/ 'TTL',
-        recentEvents: /*[[#{page.dashboard.js.recent_events}]]*/ '최근 생존 신호 이벤트',
+        recentEvents: /*[[#{page.dashboard.js.recent_events}]]*/ '최근 안부 신호 이벤트',
         confirmTime: /*[[#{page.dashboard.js.confirm_time}]]*/ '확인 시각',
         source: /*[[#{page.dashboard.js.source}]]*/ '출처',
-        noEvents: /*[[#{page.dashboard.js.no_events}]]*/ '최근 생존 신호 이벤트가 없습니다.',
+        noEvents: /*[[#{page.dashboard.js.no_events}]]*/ '최근 안부 신호 이벤트가 없습니다.',
         noTaskHistory: /*[[#{page.dashboard.js.no_task_history}]]*/ '아직 저장된 작업 수행 이력이 없습니다.',
         taskHistoryTitle: /*[[#{page.dashboard.js.task_history_title}]]*/ '최근 작업 수행 이력',
         taskColTask: /*[[#{page.dashboard.js.task_col_task}]]*/ '작업',
@@ -443,13 +546,20 @@
         expandAll: /*[[#{page.dashboard.expand_all}]]*/ '모두 펼치기',
     };
 
+    // Phase 5a: footer 시스템 상태 한 줄
+    window.MUSE_FOOTER_I18N = {
+        echoChecking: /*[[#{page.dashboard.footer.echo_checking}]]*/ 'Echo Server 확인 중…',
+        echoOk: /*[[#{page.dashboard.footer.echo_ok}]]*/ 'Echo Server 정상',
+        echoError: /*[[#{page.dashboard.footer.echo_error}]]*/ 'Echo Server 연결 실패'
+    };
+
     window.MUSE_TOUR_I18N = {
         dashboardTitle: /*[[#{tour.muse.dashboard.title}]]*/ 'Muse Agent 대시보드',
         dashboardDesc: /*[[#{tour.muse.dashboard.desc}]]*/ '로컬 에이전트 상태, 스케줄, 디바이스를 한 번에 관리합니다.',
         statusTitle: /*[[#{tour.muse.status.title}]]*/ '현재 상태',
         statusDesc: /*[[#{tour.muse.status.desc}]]*/ 'Echo Server 연동 결과와 연결 상태를 확인합니다.',
-        aliveTitle: /*[[#{tour.muse.alive.title}]]*/ '생존 신호 상태',
-        aliveDesc: /*[[#{tour.muse.alive.desc}]]*/ '생존 상태와 최근 이벤트를 점검할 수 있습니다.',
+        aliveTitle: /*[[#{tour.muse.alive.title}]]*/ '안부 신호 상태',
+        aliveDesc: /*[[#{tour.muse.alive.desc}]]*/ '안부 상태와 최근 이벤트를 점검할 수 있습니다.',
         taskTitle: /*[[#{tour.muse.task.title}]]*/ '작업 관리',
         taskDesc: /*[[#{tour.muse.task.desc}]]*/ '정리 경로와 실행 작업을 관리합니다.',
         echoConfigTitle: /*[[#{tour.muse.echo_config.title}]]*/ 'Echo Server 설정',

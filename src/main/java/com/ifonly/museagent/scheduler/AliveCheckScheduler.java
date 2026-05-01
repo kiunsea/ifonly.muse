@@ -118,5 +118,4 @@ public class AliveCheckScheduler implements SchedulingConfigurer {
       scheduleExecutorService.purgeExpiredTrash();
     }
   }
-
 }

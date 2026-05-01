@@ -42,6 +42,13 @@ app:
       # echo external API 버전. echo-server 가 /v1/ 도입 시 "v1" 로 변경하고 위 echo-note-* 경로도 함께 갱신.
       external-api-version: unversioned
 
+  # Echo Note 보관함 설정
+  echo-note:
+    # muse 로그에 수신자 이메일을 평문으로 남기지 않기 위한 hash salt.
+    # 값을 비워 두면 hash 는 결정론적으로 동작하지만 (동일 이메일 → 동일 해시) 역산 방어력은 약해진다.
+    # 환경변수 ECHO_NOTE_RECIPIENT_HASH_SALT 로 임의의 긴 문자열을 주입해 강화 가능.
+    recipient-hash-salt: ${ECHO_NOTE_RECIPIENT_HASH_SALT:}
+
   scheduler:
     alive-check:
       interval-ms: 600000          # 10분

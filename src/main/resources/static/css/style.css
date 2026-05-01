@@ -362,8 +362,8 @@ body.help-mode-enabled [data-help-desc] {
     max-width: 320px;
     padding: 12px 14px;
     border-radius: 10px;
-    background: rgba(17, 24, 39, 0.96);
-    border: 1px solid rgba(74, 144, 217, 0.45);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
     color: var(--text-primary);
     pointer-events: none;
@@ -380,7 +380,7 @@ body.help-mode-enabled [data-help-desc] {
 .help-tooltip-title {
     font-size: 0.92rem;
     font-weight: 700;
-    color: #9ed0ff;
+    color: var(--primary-color);
     margin-bottom: 4px;
 }
 
@@ -398,9 +398,9 @@ body.help-mode-enabled [data-help-desc] {
     position: absolute;
     width: 10px;
     height: 10px;
-    background: rgba(17, 24, 39, 0.96);
-    border-right: 1px solid rgba(74, 144, 217, 0.45);
-    border-bottom: 1px solid rgba(74, 144, 217, 0.45);
+    background: var(--card-bg);
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
     transform: rotate(45deg);
 }
 
@@ -913,4 +913,865 @@ footer {
         padding: 4px 6px;
         font-size: 0.7rem;
     }
+}
+
+/* ============================================
+   System Panel — Phase 1 (인프라)
+   우측 슬라이드 인. 내용은 Phase 2 에서 채움.
+   ============================================ */
+
+.muse-system-panel-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.32);
+    z-index: 1500;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.muse-system-panel-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.muse-system-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 420px;
+    max-width: 92vw;
+    background: var(--card-bg);
+    border-left: 1px solid var(--border-color);
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+    z-index: 1501;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.muse-system-panel.open {
+    transform: translateX(0);
+}
+
+.muse-system-panel-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.muse-system-panel-header h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.muse-system-panel-close {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: background 0.15s, color 0.15s;
+}
+
+/* 도구 줄 (sticky 직전 영역) — 가이드 / 도움말 / 모두 접기 */
+.muse-system-panel-tools {
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    background: var(--card-bg);
+}
+
+.muse-system-panel-tools .btn-sm {
+    padding: 5px 12px;
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+.muse-system-panel-toggle-all {
+    background: transparent;
+    color: var(--warning-color);
+    border: 1px solid var(--warning-color);
+    font-weight: 600;
+    margin-left: auto;
+}
+
+.muse-system-panel-toggle-all:hover {
+    background: rgba(196, 164, 74, 0.12);
+}
+
+.muse-system-panel-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+}
+
+html[data-theme="dark"] .muse-system-panel-close:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.muse-system-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.muse-system-panel-body .empty-hint {
+    padding: 30px 22px;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.6;
+    text-align: center;
+}
+
+/* 헤더의 ⚙️ 시스템 버튼 (Phase 1 임시 위치, Phase 5 에서 헤더 재정렬 시 이동) */
+.btn-system-panel {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.btn-system-panel.has-warning::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--warning-color, #c4a44a);
+}
+
+/* 모바일 — 풀 폭 takeover */
+@media (max-width: 576px) {
+    .muse-system-panel {
+        width: 100vw;
+        max-width: 100vw;
+    }
+}
+
+/* ============================================
+   System Panel — Phase 2 (카드 이주 후 폭 확대 + 내부 압축)
+   ============================================ */
+
+.muse-system-panel {
+    width: 540px;
+    max-width: 92vw;
+}
+
+/* 패널 내부 카드 — 외곽 padding/margin/border/shadow 압축 */
+.muse-system-panel-body .card {
+    margin-bottom: 0;
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: none;
+}
+
+.muse-system-panel-body .collapsible-card .card-header {
+    padding: 14px 18px;
+    border-bottom: none;
+}
+
+.muse-system-panel-body .collapsible-card > .card-content {
+    padding: 14px 18px;
+}
+
+.muse-system-panel-body .collapsible-card.collapsed > .card-content {
+    padding: 0;
+}
+
+.muse-system-panel-body .card h2 {
+    font-size: 1rem;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.muse-system-panel-body .info-grid {
+    grid-template-columns: 1fr;
+}
+
+/* 네스트된 admin 카드 안에서는 더욱 압축 */
+.muse-system-panel-body .admin-card-content > .card {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.muse-system-panel-body .admin-card-content > .card:last-child {
+    border-bottom: none;
+}
+
+/* ============================================
+   Echo Note Hero — Phase 3 (메인 = 보관함 요약)
+   ============================================ */
+
+.echo-note-hero {
+    margin: 0 auto 30px;
+    padding: 0 4px;
+}
+
+.echo-note-state-line {
+    color: var(--text-secondary);
+    font-size: 0.98rem;
+    margin-bottom: 18px;
+    letter-spacing: 0.01em;
+}
+
+.echo-note-state-line b {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.echo-note-state-line .echo-note-state-sep {
+    margin: 0 10px;
+    color: var(--border-color);
+}
+
+.echo-note-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.echo-note-actions .btn {
+    padding: 11px 22px;
+    font-size: 0.95rem;
+}
+
+/* 메시지 카드 목록 */
+.echo-note-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.echo-note-msg {
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    padding: 18px 22px;
+    cursor: pointer;
+    transition: background-color 0.15s, transform 0.05s;
+    border: 1px solid var(--border-color);
+}
+
+.echo-note-msg:hover {
+    background-color: rgba(74, 144, 217, 0.06);
+}
+
+html[data-theme="dark"] .echo-note-msg:hover {
+    background-color: rgba(74, 144, 217, 0.1);
+}
+
+.echo-note-msg.is-sent {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+html[data-theme="dark"] .echo-note-msg.is-sent {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.echo-note-msg-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+}
+
+.echo-note-marker {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: 1px solid var(--text-secondary);
+    background: transparent;
+    flex-shrink: 0;
+}
+
+.echo-note-msg.is-draft .echo-note-marker {
+    border-color: var(--warning-color, #c4a44a);
+}
+
+.echo-note-msg.is-ready .echo-note-marker {
+    border-color: var(--info-color, #5a8a8a);
+    background: linear-gradient(to right, var(--info-color, #5a8a8a) 50%, transparent 50%);
+}
+
+.echo-note-msg.is-sent .echo-note-marker {
+    border-color: var(--success-color, #5a8a5e);
+    background: var(--success-color, #5a8a5e);
+}
+
+.echo-note-status-label {
+    font-weight: 600;
+}
+
+.echo-note-msg.is-draft .echo-note-status-label {
+    color: var(--warning-color);
+}
+
+.echo-note-msg.is-ready .echo-note-status-label {
+    color: var(--info-color);
+}
+
+.echo-note-msg.is-sent .echo-note-status-label {
+    color: var(--success-color);
+}
+
+.echo-note-msg-recipient {
+    font-size: 0.86rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.echo-note-msg-recipient-key {
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    margin-right: 6px;
+    opacity: 0.75;
+}
+
+.echo-note-msg-recipient-mail {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.84rem;
+    color: var(--text-primary);
+    opacity: 0.85;
+}
+
+.echo-note-msg-preview {
+    font-size: 1.02rem;
+    color: var(--text-primary);
+    line-height: 1.55;
+}
+
+.echo-note-msg.is-sent .echo-note-msg-preview {
+    color: var(--text-secondary);
+}
+
+.echo-note-see-all {
+    text-align: center;
+    margin: 22px 0 6px;
+}
+
+.echo-note-see-all a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-bottom: 1px dotted var(--text-secondary);
+    padding-bottom: 1px;
+}
+
+.echo-note-see-all a:hover {
+    border-bottom-style: solid;
+    text-decoration: none;
+}
+
+/* 빈 보관함 */
+.echo-note-empty {
+    text-align: center;
+    padding: 60px 20px 80px;
+}
+
+.echo-note-empty-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 18px;
+    opacity: 0.45;
+    display: block;
+}
+
+html[data-theme="dark"] .echo-note-empty-icon {
+    filter: invert(1);
+}
+
+.echo-note-empty-msg {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.echo-note-empty-sub {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    opacity: 0.75;
+}
+
+/* ============================================
+   Compose Modal — Phase 3
+   ============================================ */
+
+.compose-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.compose-modal-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.compose-modal {
+    background: var(--card-bg);
+    border-radius: 14px;
+    width: 560px;
+    max-width: 100%;
+    max-height: 90vh;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    transform: translateY(8px);
+    transition: transform 0.2s ease;
+}
+
+.compose-modal-overlay.open .compose-modal {
+    transform: translateY(0);
+}
+
+.compose-modal-head {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.compose-modal-head h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.compose-modal-close {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    font-size: 0.86rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+.compose-modal-close:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-primary);
+}
+
+html[data-theme="dark"] .compose-modal-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.compose-modal-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.compose-modal-body label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+}
+
+.compose-modal-body label:first-child {
+    margin-top: 0;
+}
+
+.compose-modal-body input[type="email"] {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.15);
+    color: var(--text-primary);
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+}
+
+.compose-modal-body textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 14px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-family: var(--font-family);
+    font-size: 1.02rem;
+    background: rgba(0, 0, 0, 0.15);
+    color: var(--text-primary);
+    line-height: 1.6;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.compose-modal-hint {
+    margin-top: 12px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    background: rgba(0, 0, 0, 0.08);
+    padding: 10px 14px;
+    border-radius: 8px;
+}
+
+html[data-theme="dark"] .compose-modal-hint {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.compose-modal-foot {
+    padding: 14px 24px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.compose-modal-foot .btn {
+    padding: 9px 20px;
+    font-size: 0.92rem;
+}
+
+/* ============================================
+   더보기 메뉴 (⋯) — 가이드/도움말/테마/언어 묶음
+   ============================================ */
+
+.muse-more-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.muse-more-toggle {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    font-size: 1.2rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.muse-more-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 200px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+    padding: 6px;
+    z-index: 1100;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.muse-more-dropdown[style*="block"],
+.muse-more-dropdown[style*="flex"] {
+    display: flex !important;
+}
+
+.muse-more-item {
+    display: block;
+    padding: 9px 14px;
+    border-radius: 6px;
+    color: var(--text-primary);
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: background 0.12s;
+}
+
+.muse-more-item:hover {
+    background: rgba(74, 144, 217, 0.08);
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+html[data-theme="dark"] .muse-more-item:hover {
+    background: rgba(74, 144, 217, 0.15);
+}
+
+.muse-more-item.btn-help-toggle.active {
+    background-color: rgba(23, 162, 184, 0.18);
+    color: #9ee7f2;
+}
+
+.muse-more-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
+}
+
+/* ============================================
+   ⚙️ 시스템 버튼 — 셋업 미완 점등
+   ============================================ */
+
+#btnSystemPanel.has-warning::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--warning-color);
+    border: 1px solid var(--card-bg);
+}
+
+/* ============================================
+   Footer 시스템 상태 한 줄 — Phase 5a
+   정상 시 회색, 이상 시 자동 색 강화. 클릭 시 시스템 패널 열림.
+   ============================================ */
+
+.muse-footer-bar {
+    margin-top: 30px;
+    padding: 14px 0 24px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+}
+
+.muse-footer-status {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.muse-footer-status:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+html[data-theme="dark"] .muse-footer-status:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.muse-footer-status.is-warn {
+    color: var(--warning-color);
+}
+
+.muse-footer-status.is-warn:hover {
+    background: rgba(196, 164, 74, 0.1);
+    border-color: rgba(196, 164, 74, 0.4);
+}
+
+.muse-footer-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success-color, #5a8a5e);
+    flex-shrink: 0;
+}
+
+.muse-footer-status.is-warn .muse-footer-dot {
+    background: var(--warning-color);
+}
+
+.muse-footer-status.is-error .muse-footer-dot {
+    background: var(--danger-color);
+}
+
+/* Echo Server 상태가 unknown 일 때 (초기 로드) — 점 색 회색 */
+.muse-footer-status:not(.is-warn):not(.is-error) #footerEchoDot:not(.ok):not(.error) {
+    background: var(--text-quiet, #b5ad9c);
+    opacity: 0.6;
+}
+
+.muse-footer-dot.ok { background: var(--success-color, #5a8a5e); opacity: 1; }
+.muse-footer-dot.error { background: var(--danger-color, #a85454); opacity: 1; }
+
+.muse-footer-sep {
+    margin: 0 8px;
+    color: var(--border-color);
+}
+
+.muse-footer-caret {
+    margin-left: 8px;
+    font-size: 0.95rem;
+    opacity: 0.6;
+}
+
+.muse-footer-warn-text {
+    color: var(--warning-color);
+    font-weight: 600;
+}
+
+.muse-footer-copyright {
+    font-size: 0.74rem;
+    color: var(--text-quiet, #b5ad9c);
+    margin: 0;
+    opacity: 0.6;
+}
+
+/* ============================================
+   /echo-note 풀 보관함 toolbar — Phase 4
+   검색 + 상태 chips + 정렬 + 필터된 카운트
+   ============================================ */
+
+.en-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+html[data-theme="dark"] .en-toolbar {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.en-search-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-family: inherit;
+}
+
+.en-search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.18);
+}
+
+.en-filter-chips {
+    display: inline-flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.en-chip {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.en-chip:hover {
+    background: rgba(74, 144, 217, 0.08);
+    color: var(--text-primary);
+}
+
+.en-chip.is-active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.en-chip-count {
+    background: rgba(0, 0, 0, 0.18);
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: inherit;
+}
+
+.en-chip.is-active .en-chip-count {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.en-sort-select {
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.en-sort-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.en-filtered-count {
+    margin-left: auto;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .en-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .en-search-input { width: 100%; }
+    .en-filtered-count { margin-left: 0; text-align: right; }
 }

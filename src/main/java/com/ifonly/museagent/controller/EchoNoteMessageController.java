@@ -235,6 +235,31 @@ public class EchoNoteMessageController {
     }
   }
 
+  /**
+   * 작성 form 의 인라인 미리보기 — DB 저장 없이 가공본만 반환. 사용자가 보관 결정 *전*에 "어떻게 가공될지" 미리 확인할 수 있게 하는 흐름.
+   *
+   * <p>응답에 {@code stubFallback=true} 면 echo 와 연결 안 된 상태이므로 UI 가 안내 배너 + [다시 시도] 버튼을 노출.
+   */
+  @PostMapping("/api/echo-note-messages/preview-only")
+  @ResponseBody
+  public ResponseEntity<Map<String, Object>> previewOnly(@RequestBody Map<String, String> body) {
+    Map<String, Object> result = new HashMap<>();
+    try {
+      var preview =
+          service.previewOnly(body.get("originalMessage"), body.getOrDefault("locale", "ko"));
+      result.put("success", true);
+      result.put("preview", preview.text());
+      result.put("stubFallback", preview.stubFallback());
+      result.put("fallbackReason", preview.fallbackReason());
+      return ResponseEntity.ok(result);
+    } catch (IllegalArgumentException e) {
+      return badRequestResponse(e);
+    } catch (Exception e) {
+      log.error("echo-note preview-only failed", e);
+      return errorResponse(e);
+    }
+  }
+
   @PostMapping("/api/echo-note-messages/{id}/finalize")
   @ResponseBody
   public ResponseEntity<Map<String, Object>> finalizeMessage(@PathVariable Long id) {

@@ -1,8 +1,10 @@
 package com.ifonly.museagent.service;
 
+import com.ifonly.museagent.client.EchoErrorMapper;
 import com.ifonly.museagent.client.EchoServerClient;
 import com.ifonly.museagent.dao.EchoNoteMessageDao;
 import com.ifonly.museagent.dto.EchoNoteMessageDto;
+import com.ifonly.museagent.util.RecipientHashUtil;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -46,15 +48,21 @@ public class EchoNoteMessageService {
   private final EchoNoteMessageDao dao;
   private final EchoNotePreviewGenerator previewGenerator;
   private final EchoServerClient echoServerClient;
+  private final EchoErrorMapper echoErrorMapper;
+  private final RecipientHashUtil recipientHashUtil;
 
   @Autowired
   public EchoNoteMessageService(
       EchoNoteMessageDao dao,
       EchoNotePreviewGenerator previewGenerator,
-      EchoServerClient echoServerClient) {
+      EchoServerClient echoServerClient,
+      EchoErrorMapper echoErrorMapper,
+      RecipientHashUtil recipientHashUtil) {
     this.dao = dao;
     this.previewGenerator = previewGenerator;
     this.echoServerClient = echoServerClient;
+    this.echoErrorMapper = echoErrorMapper;
+    this.recipientHashUtil = recipientHashUtil;
   }
 
   public List<EchoNoteMessageDto> getAll() {
@@ -128,6 +136,22 @@ public class EchoNoteMessageService {
     EchoNoteMessageDto updated = dao.update(existing);
     log.info("Echo-note preview generated (stub): id={}", updated.getId());
     return updated;
+  }
+
+  /**
+   * 작성 form 의 인라인 미리보기용 stateless preview — DB 저장 없이 가공본만 반환.
+   *
+   * <p>사용자가 보관 결정 *전*에 "이렇게 가공될 거예요" 를 미리 보고 결정할 수 있게 하는 흐름. 결과는 DB 에 저장되지 않으며, 사용자가 [이대로 보관] 누르면
+   * 별도로 {@link #create}/{@link #update} 가 호출됨.
+   *
+   * @param originalMessage 원본 메시지 (필수)
+   * @param locale ko/en/ja
+   * @return 가공본 + stub 여부 + 폴백 사유
+   */
+  public EchoNotePreviewGenerator.PreviewResult previewOnly(String originalMessage, String locale) {
+    String body = validateMessage(originalMessage);
+    String safeLocale = locale != null ? locale : "ko";
+    return previewGenerator.generateDetailed(body, safeLocale);
   }
 
   /**
@@ -221,20 +245,25 @@ public class EchoNoteMessageService {
 
     String status = result == null ? null : String.valueOf(result.get("status"));
     if (!"sent".equals(status)) {
-      String message = result == null ? "응답 없음" : String.valueOf(result.get("message"));
+      String rawMessage =
+          result == null || result.get("message") == null
+              ? null
+              : String.valueOf(result.get("message"));
       log.warn(
-          "Echo-note send via echo returned non-sent status: id={}, status={}, message={}",
+          "Echo-note send via echo returned non-sent status: id={}, status={}, rawMessage={}",
           id,
           status,
-          message);
-      throw new IllegalStateException("echo-server 가 발송에 실패했어요: " + message);
+          rawMessage);
+      throw new IllegalStateException(echoErrorMapper.mapSendFailure(rawMessage));
     }
 
     existing.setStatus("SENT");
     existing.setSentAt(LocalDateTime.now());
     EchoNoteMessageDto updated = dao.update(existing);
     log.info(
-        "Echo-note message sent via echo: id={}, recipient={}", id, existing.getRecipientEmail());
+        "Echo-note message sent via echo: id={}, recipientHash={}",
+        id,
+        recipientHashUtil.hashEmail(existing.getRecipientEmail()));
     return updated;
   }
 
@@ -252,6 +281,26 @@ public class EchoNoteMessageService {
 
   public int getReadyCount() {
     return dao.countByStatus("READY");
+  }
+
+  /** SENT 상태 카운트 — 메인 요약 뷰의 "닿은 메시지" 표기용. */
+  public int getSentCount() {
+    return dao.countByStatus("SENT");
+  }
+
+  /**
+   * 메인 요약 뷰용 — 최근 N개 메시지. {@link EchoNoteMessageDao#findAll()} 가 {@code created_at DESC} 정렬이라 그대로
+   * slice 하면 최신부터 limit 개수만큼 반환된다.
+   *
+   * @param limit 가져올 최대 개수 (1 이상)
+   * @return 최근 메시지 리스트 (limit 보다 적으면 그만큼)
+   */
+  public List<EchoNoteMessageDto> getRecent(int limit) {
+    if (limit <= 0) {
+      return List.of();
+    }
+    List<EchoNoteMessageDto> all = dao.findAll();
+    return all.size() <= limit ? all : all.subList(0, limit);
   }
 
   // ---------------------------------------------------------------------------

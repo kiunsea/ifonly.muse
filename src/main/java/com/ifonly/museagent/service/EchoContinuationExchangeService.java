@@ -1,5 +1,6 @@
 package com.ifonly.museagent.service;
 
+import com.ifonly.museagent.client.EchoErrorMapper;
 import com.ifonly.museagent.config.EchoServerProperties;
 import com.ifonly.museagent.config.EchoUrlWhitelist;
 import java.util.HashMap;
@@ -11,6 +12,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -40,12 +43,16 @@ public class EchoContinuationExchangeService {
   private final RestTemplate restTemplate;
   private final EchoUrlWhitelist echoUrlWhitelist;
   private final EchoServerProperties echoServerProperties;
+  private final EchoErrorMapper echoErrorMapper;
 
   public EchoContinuationExchangeService(
-      EchoUrlWhitelist echoUrlWhitelist, EchoServerProperties echoServerProperties) {
+      EchoUrlWhitelist echoUrlWhitelist,
+      EchoServerProperties echoServerProperties,
+      EchoErrorMapper echoErrorMapper) {
     this.restTemplate = new RestTemplate();
     this.echoUrlWhitelist = echoUrlWhitelist;
     this.echoServerProperties = echoServerProperties;
+    this.echoErrorMapper = echoErrorMapper;
   }
 
   /**
@@ -83,8 +90,7 @@ public class EchoContinuationExchangeService {
               endpoint, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
 
       if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-        throw new IllegalStateException(
-            "echo exchange returned non-2xx or empty body: " + response.getStatusCode());
+        throw new IllegalStateException("popup 링크 처리 중 echo 응답이 비정상이에요. 잠시 후 다시 시도해주세요.");
       }
 
       Map<String, Object> data = new HashMap<>(response.getBody());
@@ -98,7 +104,7 @@ public class EchoContinuationExchangeService {
           || clientSecret == null
           || clientSecret.isBlank()
           || "null".equals(clientSecret)) {
-        throw new IllegalStateException("echo exchange response missing credentials");
+        throw new IllegalStateException("echo 응답에 자격증명이 누락됐어요. echo-config 페이지에서 직접 설정해주세요.");
       }
 
       log.info(
@@ -106,6 +112,22 @@ public class EchoContinuationExchangeService {
           userEmail,
           clientId);
       return new ContinuationCredential(clientId, clientSecret, userEmail);
+    } catch (HttpStatusCodeException e) {
+      String errBody = e.getResponseBodyAsString();
+      String code = echoErrorMapper.extractErrorCode(errBody);
+      String userMsg = echoErrorMapper.mapContinuationError(e.getStatusCode().value(), code);
+      log.error(
+          "Continuation token exchange rejected: endpoint={}, status={}, code={}",
+          endpoint,
+          e.getStatusCode().value(),
+          code);
+      throw new IllegalStateException(userMsg, e);
+    } catch (RestClientException e) {
+      log.error(
+          "Continuation token exchange transport failure: endpoint={}, reason={}",
+          endpoint,
+          e.getMessage());
+      throw new IllegalStateException("echo 와 통신할 수 없어요. 네트워크 또는 echo 상태를 확인해주세요.", e);
     } catch (RuntimeException e) {
       log.error(
           "Continuation token exchange failed: endpoint={}, reason={}", endpoint, e.getMessage());

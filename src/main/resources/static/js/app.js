@@ -271,6 +271,9 @@ function updateStatusSection(data) {
         }
     }
 
+    // Phase 5a: footer Echo Server 상태 동기화
+    updateFooterEchoStatus(data.overallSuccess);
+
     const failureGuideTooltip = `
         <span class="status-tooltip-wrap" tabindex="0">
             <span class="status-tooltip-trigger" aria-label="Echo Server 연결 안내">?</span>
@@ -976,4 +979,245 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-load task history summary
     updateTaskHistorySummaryPeriodButtons();
     loadTaskHistorySummary();
+});
+
+// ============================================
+// System Panel — Phase 1 (인프라)
+// 우측 슬라이드 패널 토글. Phase 2 에서 기존 시스템 카드들이
+// 패널 본문으로 이주하면 그대로 활용된다.
+// ============================================
+
+function openSystemPanel() {
+    const panel = document.getElementById('museSystemPanel');
+    const overlay = document.getElementById('museSystemPanelOverlay');
+    if (panel) {
+        panel.classList.add('open');
+        panel.setAttribute('aria-hidden', 'false');
+    }
+    if (overlay) {
+        overlay.classList.add('open');
+        overlay.setAttribute('aria-hidden', 'false');
+    }
+    // 본문 스크롤 잠금 — 패널 내부 스크롤 충돌 방지
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSystemPanel() {
+    const panel = document.getElementById('museSystemPanel');
+    const overlay = document.getElementById('museSystemPanelOverlay');
+    if (panel) {
+        panel.classList.remove('open');
+        panel.setAttribute('aria-hidden', 'true');
+    }
+    if (overlay) {
+        overlay.classList.remove('open');
+        overlay.setAttribute('aria-hidden', 'true');
+    }
+    document.body.style.overflow = '';
+}
+
+function toggleSystemPanel() {
+    const panel = document.getElementById('museSystemPanel');
+    if (!panel) return;
+    if (panel.classList.contains('open')) {
+        closeSystemPanel();
+    } else {
+        openSystemPanel();
+    }
+}
+
+// 오버레이 클릭 + ESC 키로 닫기
+document.addEventListener('DOMContentLoaded', function() {
+    const overlay = document.getElementById('museSystemPanelOverlay');
+    if (overlay) {
+        overlay.addEventListener('click', closeSystemPanel);
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const panel = document.getElementById('museSystemPanel');
+            if (panel && panel.classList.contains('open')) {
+                closeSystemPanel();
+            }
+        }
+    });
+});
+
+// ============================================
+// Footer Echo Server 상태 갱신 — Phase 5a
+// 메인 화면 초기 렌더 시 점은 회색 (확인 중). 테스트 결과 수신 시 색·라벨 업데이트.
+// ============================================
+
+function updateFooterEchoStatus(connected) {
+    const dot = document.getElementById('footerEchoDot');
+    const text = document.getElementById('footerEchoStatusText');
+    const status = document.querySelector('.muse-footer-status');
+    if (!dot || !text) return;
+
+    // I18N 키는 메인 화면에 항상 한 줄로 노출되는 짧은 라벨
+    const I = window.MUSE_FOOTER_I18N || {};
+    if (connected === true) {
+        dot.classList.add('ok');
+        dot.classList.remove('error');
+        text.textContent = I.echoOk || 'Echo Server 정상';
+        if (status) status.classList.remove('is-error');
+    } else if (connected === false) {
+        dot.classList.add('error');
+        dot.classList.remove('ok');
+        text.textContent = I.echoError || 'Echo Server 연결 실패';
+        if (status) status.classList.add('is-error');
+    } else {
+        // unknown / 확인 중
+        dot.classList.remove('ok', 'error');
+        text.textContent = I.echoChecking || 'Echo Server 확인 중…';
+    }
+}
+
+// ============================================
+// 더보기 메뉴 (⋯) — 헤더 우측의 가이드/도움말/테마/언어 묶음
+// 시스템 · 설정(⚙️) 은 단독 노출, 나머지는 이 토글 안으로 들어감.
+// ============================================
+
+function toggleMoreMenu(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    const dd = document.getElementById('moreMenuDropdown');
+    if (!dd) return;
+    const isOpen = dd.style.display !== 'none' && dd.style.display !== '';
+    dd.style.display = isOpen ? 'none' : 'flex';
+}
+
+function closeMoreMenu() {
+    const dd = document.getElementById('moreMenuDropdown');
+    if (dd) dd.style.display = 'none';
+}
+
+// 외부 영역 클릭 시 닫기
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.muse-more-menu')) {
+        closeMoreMenu();
+    }
+});
+// ESC 로도 닫기
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const dd = document.getElementById('moreMenuDropdown');
+        if (dd && dd.style.display === 'flex') closeMoreMenu();
+    }
+});
+
+// ============================================
+// Echo Note Compose Modal — Phase 3
+// 메인 hero 의 "+ 새로 보관하기" 버튼 → 모달 → POST /api/echo-note-messages
+// 성공 시 페이지 새로고침으로 보관함 갱신.
+// ============================================
+
+function openComposeModal() {
+    const overlay = document.getElementById('composeModalOverlay');
+    if (!overlay) return;
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    // 첫 입력으로 포커스
+    setTimeout(function() {
+        const recipient = document.getElementById('composeRecipient');
+        if (recipient) recipient.focus();
+    }, 80);
+}
+
+function closeComposeModal() {
+    const overlay = document.getElementById('composeModalOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    // 입력 비우기 (다음 열림 시 깨끗)
+    const recipient = document.getElementById('composeRecipient');
+    const message = document.getElementById('composeMessage');
+    if (recipient) recipient.value = '';
+    if (message) message.value = '';
+}
+
+async function submitNewMessage() {
+    const recipient = document.getElementById('composeRecipient');
+    const message = document.getElementById('composeMessage');
+    if (!recipient || !message) return;
+
+    const recipientEmail = recipient.value.trim();
+    const originalMessage = message.value.trim();
+
+    if (!recipientEmail || !originalMessage) {
+        // 폼 native validation 활용
+        if (!recipientEmail) recipient.reportValidity();
+        else message.reportValidity();
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/echo-note-messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                recipientEmail: recipientEmail,
+                originalMessage: originalMessage,
+                locale: (window.MUSE_LOCALE || document.documentElement.lang || 'ko')
+            })
+        });
+        if (!response.ok) {
+            const text = await response.text();
+            alert('보관 실패: ' + text);
+            return;
+        }
+        closeComposeModal();
+        // 가장 단순한 갱신 — 페이지 새로고침으로 hero 의 카운트·메시지 카드 재렌더
+        window.location.reload();
+    } catch (e) {
+        alert('보관 실패: ' + e.message);
+    }
+}
+
+// 모달 오버레이 클릭 + ESC 키로 닫기
+document.addEventListener('DOMContentLoaded', function() {
+    const overlay = document.getElementById('composeModalOverlay');
+    if (overlay) {
+        overlay.addEventListener('click', function(e) {
+            // 모달 본체가 아니라 오버레이 자체를 클릭한 경우만
+            if (e.target === overlay) closeComposeModal();
+        });
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const m = document.getElementById('composeModalOverlay');
+            if (m && m.classList.contains('open')) closeComposeModal();
+        }
+    });
+});
+
+// ============================================
+// 셋업 미완 자동 처리 — Phase 2
+// 디바이스 미등록 상태일 때:
+//   1. ⚙️ 버튼에 노란 점등 (.has-warning)
+//   2. 시스템 패널 내부 device-mgmt 카드 자동 펼침
+// ============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Phase 2 + 5c: data-device-registered="false" 일 때 자동 펼침 + ⚙️ 노란 점등.
+    // 이전 구현은 라벨 텍스트 ("미등록") 매칭이라 i18n 환경에서 깨졌음. 이제 서버가
+    // 명시적으로 boolean 을 data-attribute 로 내려보내므로 locale-독립 robust 검출.
+    const deviceCard = document.querySelector('[data-card-id="device-mgmt"]');
+    if (!deviceCard) return;
+
+    const isUnregistered = deviceCard.getAttribute('data-device-registered') === 'false';
+    if (isUnregistered) {
+        // 미등록 상태 — 자동 펼침
+        deviceCard.classList.remove('collapsed');
+        // localStorage 의 collapsedCards 에서도 제거
+        const collapsed = JSON.parse(localStorage.getItem('collapsedCards') || '[]');
+        const idx = collapsed.indexOf('device-mgmt');
+        if (idx > -1) {
+            collapsed.splice(idx, 1);
+            localStorage.setItem('collapsedCards', JSON.stringify(collapsed));
+        }
+        // ⚙️ 버튼에 노란 점등
+        const sysBtn = document.getElementById('btnSystemPanel');
+        if (sysBtn) sysBtn.classList.add('has-warning');
+    }
 });

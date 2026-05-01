@@ -5,6 +5,31 @@
 
 ---
 
+## Unreleased
+
+> v2.0.0 첫 공개 릴리즈 이후 누적된 미커밋 변경. 다음 commit·release 시점에 정식 버전 태그 부여 예정.
+
+### UI/UX 리팩토링
+
+- **메인 대시보드 = Echo Note 보관함 hero 뷰**. 진입 즉시 "보관 중인 메시지 N개 · 닿은 메시지 N개" 상태 라인 + "+새로 보관하기" / "🔍 검색" 액션 + 최근 5건 메시지 카드 (DRAFT/READY/SENT 상태) 가 보이도록 변경. 이전엔 시스템 상태 카드 모음이 첫 화면이었음.
+- **헤더 재구성** — 인라인 버튼 그룹 (가이드/도움말/모두접기/테마/언어) 을 더보기 (⋯) 드롭다운 + ⚙️ 시스템 패널 토글 단독 노출로 단순화.
+- **⚙️ 시스템 · 설정 패널 신설** — 옛 대시보드 카드들 (현재 상태 / 안부 신호 / 작업 상태 / Echo Server 설정 / 디바이스 / 시스템 정보) 을 우측 슬라이드 패널 안으로 격리. 평상시엔 메시지 보관함에 집중, 설정·진단 작업이 필요할 때만 패널을 연다.
+- **용어 부드럽게** — "생존 신호" → "안부 신호" (i18n 4개 locale + tour copy 일괄 갱신).
+
+### 사용성
+
+- **도움말 툴팁이 테마를 따른다** — 이전엔 어두운 배경이 하드코딩되어 soft 테마에서 본문 글자가 거의 안 보이던 회귀가 있었음. `--card-bg` / `--primary-color` / `--border-color` 변수로 교체해 테마 토글 시 즉시 반영.
+- **시스템 패널의 "가이드 시작" 은 패널 내부만 안내** — 이전엔 가이드가 패널 외부 (헤더 / Echo Note Hero) 로 새어나갔음. 다른 페이지 (`/echo-config`, `/task-history`, `/cleanup`, `/device/register`) 의 페이지-레벨 가이드는 그대로 페이지 전체 안내 유지.
+
+### Echo Note ↔ echo-server 정합
+
+- **수신자 이메일 로그 해싱** — muse 가 echo 발송 성공 로그에 평문으로 남기던 수신자 주소를 salted SHA-256 (앞 12 char) 으로 변환. salt 는 환경변수 `ECHO_NOTE_RECIPIENT_HASH_SALT` 로 사용자가 임의 강화 가능. 공개 repo 의 사용자 로그 공유 상황에서 PII 누출 방지.
+- **echo 응답 에러를 사용자 친화 한국어로** — 이전엔 echo 의 4xx/5xx 응답이 "Echo Server 접속 실패: HTTP 401 상태코드를 확인하세요" 같은 generic 메시지로 환원됐음. 이제 echo 가 본문에 실어주는 `error` / `message` 필드를 읽어 "echo 인증에 실패했어요. echo-config 에서 자격증명을 다시 설정해주세요" 같은 구체 메시지로 노출. 영향 범위: preview / send / continuation token 교환 / alive / device 등록 — 모든 echo API 호출.
+- **메일 발송 실패 사유 환원** — echo 가 돌려준 영문 raw 메시지 (예: "Failed to send HTML email: ...", "Email service is not available", "Email notification disabled by policy") 를 한국어로 매핑. sentinel `email_service_unavailable` 별도 처리.
+- **popup 링크 410 GONE 세분화** — 이전에 사용됐거나 만료된 popup 링크는 "이전에 사용됐거나 만료된 popup 링크예요. echo 에서 다시 진입해주세요" 로 안내.
+
+---
+
 ## v2.0.0 — Initial public release
 
 `ifonly.muse` 의 첫 공개 버전입니다. if-only Echo 서비스의 PC 동반 에이전트로, Windows 데스크톱에 설치되어 다음 기능을 제공합니다.

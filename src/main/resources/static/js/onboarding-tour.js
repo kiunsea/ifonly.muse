@@ -172,8 +172,14 @@
             }
         ];
 
+        // 시스템 · 설정 패널 가이드는 패널 내부 카드만 안내한다 (헤더 / Echo Note hero 등 외부는 제외).
+        // 패널이 페이지에 없으면 (방어적) 기존 동작 유지.
+        const systemPanel = document.getElementById('museSystemPanel');
         return candidates.filter(function (step) {
-            return !!document.querySelector(step.element);
+            const el = document.querySelector(step.element);
+            if (!el) return false;
+            if (systemPanel && !systemPanel.contains(el)) return false;
+            return true;
         });
     }
 
@@ -566,6 +572,17 @@
             return;
         }
 
+        // Phase 5b: 투어 진행 시 시스템 패널 자동 열기·닫기.
+        // 대부분의 투어 highlight 가 패널 내부 카드를 가리키므로, 시작 시 패널을 열어
+        // 모든 step 이 보이도록 하고, 종료 시 원래 상태(닫힘)로 복귀.
+        const panelWasOpenAtStart =
+            document.getElementById('museSystemPanel')
+            && document.getElementById('museSystemPanel').classList.contains('open');
+
+        if (typeof openSystemPanel === 'function' && !panelWasOpenAtStart) {
+            openSystemPanel();
+        }
+
         const guide = driverFactory({
             showProgress: true,
             animate: true,
@@ -573,6 +590,10 @@
             steps: steps,
             onDestroyed: function () {
                 localStorage.setItem(storageKey, 'true');
+                // 투어 시작 시 패널이 닫혀 있었다면 다시 닫기 (사용자 환경 보존)
+                if (typeof closeSystemPanel === 'function' && !panelWasOpenAtStart) {
+                    closeSystemPanel();
+                }
             }
         });
 

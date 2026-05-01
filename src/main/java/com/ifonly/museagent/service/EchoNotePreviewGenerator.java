@@ -30,32 +30,58 @@ public class EchoNotePreviewGenerator {
     this.echoServerClient = echoServerClient;
   }
 
+  /** Preview 결과 — text 와 함께 echo 가공본인지 stub 폴백인지 표시. UI 가 안내 배너 표시 여부 판단에 사용. */
+  public record PreviewResult(String text, boolean stubFallback, String fallbackReason) {
+    public static PreviewResult echo(String text) {
+      return new PreviewResult(text, false, null);
+    }
+
+    public static PreviewResult stub(String text, String reason) {
+      return new PreviewResult(text, true, reason);
+    }
+  }
+
   /**
    * 원본 메시지를 echo-server 의 LLM 가공본으로 교체. 실패 시 stub 폴백.
+   *
+   * <p>Backward-compat: 옛 호출 측 ({@link EchoNoteMessageService#generatePreview}) 은 그냥 String 반환을
+   * 기대하므로 여기서 텍스트만 추출해 반환. stub 여부를 알아야 하는 새 호출 측은 {@link #generateDetailed}.
    *
    * @param originalMessage 사용자 원본 메시지
    * @param locale ko/en/ja
    * @return 가공된 프리뷰 텍스트 (echo 가공본 또는 stub 폴백)
    */
   public String generate(String originalMessage, String locale) {
+    return generateDetailed(originalMessage, locale).text();
+  }
+
+  /**
+   * {@link #generate} 의 상세 버전. UI 가 stub 여부를 알아야 할 때 사용.
+   *
+   * @return {@link PreviewResult} — text + stubFallback + fallbackReason
+   */
+  public PreviewResult generateDetailed(String originalMessage, String locale) {
     if (originalMessage == null || originalMessage.isBlank()) {
-      return "";
+      return PreviewResult.echo("");
     }
     try {
       Map<String, Object> response =
           echoServerClient.generateEchoNotePreview(null, originalMessage, locale);
       Object aiGenerated = response == null ? null : response.get("aiGeneratedMessage");
       if (aiGenerated instanceof String s && !s.isBlank()) {
-        return s;
+        return PreviewResult.echo(s);
       }
       log.warn("Echo echo-note preview returned empty body — falling back to stub");
-      return stubFallback(originalMessage, locale, "echo 응답 비어있음");
+      String reason = "echo 응답 비어있음";
+      return PreviewResult.stub(stubFallback(originalMessage, locale, reason), reason);
     } catch (EchoServerConnectionException e) {
       log.warn("Echo echo-note preview failed — falling back to stub: {}", e.getMessage());
-      return stubFallback(originalMessage, locale, "echo 미연결");
+      String reason = "echo 미연결";
+      return PreviewResult.stub(stubFallback(originalMessage, locale, reason), reason);
     } catch (Exception e) {
       log.warn("Echo echo-note preview unexpected error — falling back to stub", e);
-      return stubFallback(originalMessage, locale, "예기치 않은 오류");
+      String reason = "예기치 않은 오류";
+      return PreviewResult.stub(stubFallback(originalMessage, locale, reason), reason);
     }
   }
 

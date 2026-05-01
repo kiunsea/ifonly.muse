@@ -56,6 +56,9 @@ gradle-app.setting
 /packaging/distribution/schedules/
 /packaging/distribution/*.jar
 
+# Distribution staging produced by bat/deploy.bat (jar + scripts, build artifact)
+/bat/ifonly.muse-distribution-*/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -6,6 +6,7 @@ import com.ifonly.museagent.dto.DeviceStatusInfo;
 import com.ifonly.museagent.service.ChangelogVersionService;
 import com.ifonly.museagent.service.CleanupPathService;
 import com.ifonly.museagent.service.DeviceRegistrationService;
+import com.ifonly.museagent.service.EchoNoteMessageService;
 import com.ifonly.museagent.service.SecureConfigService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,12 +28,15 @@ public class WebController {
   private static final String KEY_URL = "echo.server.url";
   private static final String KEY_CLIENT_ID = "echo.server.client.id";
 
+  private static final int MAIN_RECENT_LIMIT = 5;
+
   private final EchoServerProperties echoServerProperties;
   private final EchoServerClient echoServerClient;
   private final DeviceRegistrationService deviceRegistrationService;
   private final CleanupPathService cleanupPathService;
   private final ChangelogVersionService changelogVersionService;
   private final SecureConfigService secureConfigService;
+  private final EchoNoteMessageService echoNoteMessageService;
 
   @Value("${spring.application.name:muse-agent}")
   private String applicationName;
@@ -47,13 +51,15 @@ public class WebController {
       DeviceRegistrationService deviceRegistrationService,
       CleanupPathService cleanupPathService,
       ChangelogVersionService changelogVersionService,
-      SecureConfigService secureConfigService) {
+      SecureConfigService secureConfigService,
+      EchoNoteMessageService echoNoteMessageService) {
     this.echoServerProperties = echoServerProperties;
     this.echoServerClient = echoServerClient;
     this.deviceRegistrationService = deviceRegistrationService;
     this.cleanupPathService = cleanupPathService;
     this.changelogVersionService = changelogVersionService;
     this.secureConfigService = secureConfigService;
+    this.echoNoteMessageService = echoNoteMessageService;
   }
 
   /**
@@ -91,6 +97,14 @@ public class WebController {
     model.addAttribute("cleanupPathCount", cleanupPathService.getCount());
     model.addAttribute("enabledPathCount", cleanupPathService.getEnabledCount());
     model.addAttribute("cleanupPaths", cleanupPathService.getAllPaths());
+
+    // Echo Note 보관함 요약 — 메인 화면이 보관함 hero 영역으로 변경됨 (Phase 3).
+    // 보관 중 = DRAFT + READY (전체 - SENT). 닿은 = SENT.
+    int totalCount = echoNoteMessageService.getTotalCount();
+    int sentCount = echoNoteMessageService.getSentCount();
+    model.addAttribute("echoNoteHoldingCount", totalCount - sentCount);
+    model.addAttribute("echoNoteSentCount", sentCount);
+    model.addAttribute("recentEchoNotes", echoNoteMessageService.getRecent(MAIN_RECENT_LIMIT));
 
     return "index";
   }

@@ -9,7 +9,6 @@ import com.ifonly.museagent.exception.DeviceRegistrationException;
 import com.ifonly.museagent.exception.EchoServerConnectionException;
 import jakarta.annotation.PostConstruct;
 import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
@@ -36,15 +35,18 @@ public class EchoServerClient {
 
   private final WebClient webClient;
   private final EchoServerProperties properties;
+  private final EchoErrorMapper echoErrorMapper;
 
   private static final int MAX_RETRIES = 3;
   private static final long RETRY_DELAY_MS = 1000;
   private static final long TIMEOUT_SECONDS = 30;
 
   @Autowired
-  public EchoServerClient(WebClient webClient, EchoServerProperties properties) {
+  public EchoServerClient(
+      WebClient webClient, EchoServerProperties properties, EchoErrorMapper echoErrorMapper) {
     this.webClient = webClient;
     this.properties = properties;
+    this.echoErrorMapper = echoErrorMapper;
   }
 
   @PostConstruct
@@ -317,10 +319,18 @@ public class EchoServerClient {
       cause = cause.getCause();
     }
 
-    if (error instanceof WebClientResponseException.Unauthorized) {
-      return "Echo Server 접속 실패(" + action + "): 인증에 실패했습니다. Client ID/Client Secret을 확인하세요.";
-    }
     if (error instanceof WebClientResponseException responseException) {
+      // echo 가 구조화 error code 를 본문에 담아 보냈으면 그쪽을 먼저 반영.
+      String body = responseException.getResponseBodyAsString();
+      String code = echoErrorMapper.extractErrorCode(body);
+      String mapped =
+          echoErrorMapper.mapApiError(responseException.getStatusCode().value(), code, action);
+      if (mapped != null) {
+        return mapped;
+      }
+      if (error instanceof WebClientResponseException.Unauthorized) {
+        return "Echo Server 접속 실패(" + action + "): 인증에 실패했습니다. Client ID/Client Secret을 확인하세요.";
+      }
       return "Echo Server 접속 실패("
           + action
           + "): 서버 응답 오류입니다. HTTP "
