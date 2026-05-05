@@ -5,6 +5,16 @@
 
 ---
 
+## v2.1.1 (2026-05-06) — Brand 로고 갱신
+
+### 시각
+
+- **Muse 로고 이미지 일괄 교체** — `img/muse_logo.jpeg` 를 새 source 로 받아 brand asset 4종 (`muse-agent.png`, `muse-brand.png`, `favicon.ico`, `muse-agent.svg`) 을 모두 재생성. 헤더 로고 / 즐겨찾기 아이콘 / 트레이 / Releases ZIP 의 favicon 이 새 디자인으로 통일.
+- 기존 자산은 `img/*.bak.{ext}` 로 보존 (echo-server 의 backup naming 패턴 차용).
+- `muse-agent.svg` 는 진짜 vector path 였으나, 신규 source 가 raster (PNG) 라서 raster-embedded SVG wrapper 로 교체. 진짜 vector 가 필요해지면 별도 source 받아 교체 필요.
+
+---
+
 ## v2.1.0 (2026-05-02) — Echo Note preview UX 개선 + ↔ echo-server 정합 강화
 
 ### Echo Note 작성 form 의 preview UX

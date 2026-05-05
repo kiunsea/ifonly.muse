@@ -6,6 +6,27 @@
 
 ---
 
+## 2026-05-06 — v2.1.1 release: Brand 로고 갱신
+
+`img/muse_logo.jpeg` (실제 1024x1024 PNG) 를 새 source 로 받아 muse 의 brand asset 4종 일괄 재생성.
+
+### 절차
+
+1. 기존 4종 (`muse-agent.png`, `muse-agent.svg`, `muse-brand.png`, `favicon.ico`) 을 `*.bak.{ext}` 로 백업 (echo-server 의 `favicon.bak.ico` naming 패턴 차용).
+2. Pillow 12.2 로 source 로드 후:
+   - `muse-agent.png` ← 1024x1024 (full source)
+   - `muse-brand.png` ← 384x384 (LANCZOS 리샘플)
+   - `favicon.ico` ← 256x256 (PNG-embedded ICO)
+   - `muse-agent.svg` ← PNG-embedded SVG wrapper (raster → vector 변환 불가, 동일 파일명 유지를 위한 컨테이너)
+3. `bat/deploy.bat` 실행으로 `static/img/`, `packaging/distribution/img/` 에 sync + ZIP 재생성.
+
+### 결정·관찰
+
+- **vector → raster 강등**: 기존 `muse-agent.svg` 는 진짜 vector path 였음. 새 source 가 PNG 라 vector 재현 불가능 — base64 PNG 를 SVG `<image>` 태그로 wrap. 템플릿의 `.svg` 참조 호환성 유지가 우선이라 강등 수용. 진짜 vector 가 필요하면 별도 vector source 받아 교체.
+- **aspect 미세 변경**: 기존 PNG 들이 1008x1055 / 384x402 (살짝 portrait), 새 source 는 정사각 1024x1024. 템플릿 CSS 가 explicit width/height 로 표시 — 시각적 영향 미미.
+
+---
+
 ## 2026-05-02 — v2.1.0 release: Echo Note preview UX 개선
 
 ### 배경
