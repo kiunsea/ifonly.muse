@@ -9,7 +9,7 @@ plugins {
 }
 
 group = 'com.ifonly.museagent'
-version = '2.1.1'
+version = '2.2.0'
 description = 'ifonly.muse — PC companion agent for the if-only Echo service'
 
 java {

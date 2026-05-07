@@ -5,6 +5,38 @@
 
 ---
 
+## v2.2.0 (2026-05-07) — 가이드 페이지 + 헤더 통합 + 다국어 보강
+
+### 새 기능
+
+- **가이드 페이지 (`/guide`)** — Muse 가 제공하는 전체 기능을 카드 단위·계층 구조로 안내하는 정적 참조 페이지. 시스템 패널의 [가이드] 버튼이나 다른 페이지의 헤더 [가이드] 버튼에서 진입.
+- **헤더 더보기 (⋯) 메뉴 통합** — 7개 페이지 (echo-config / cleanup / task-history / device-register / echo-note / task-settings / guide) 의 헤더 우측이 ⋯ 메뉴 한 곳으로 정리. 테마 토글 + 언어 전환 (ko/en/ja) 이 메뉴 안에 모임.
+
+### 다국어 (i18n)
+
+- **가이드 / Echo Server 설정 페이지 본문 전체 다국어** — 이전엔 한국어 본문이 hardcoded 라 EN/JA 사용자가 언어 토글해도 본문이 안 바뀌던 회귀. 이제 양 페이지 모두 4 locale 모두 전환.
+- **"Echo Note (잔잔한 물결)" 한국어 브랜드 서브타이틀 도입** — 대시보드 카드 / 보관함 페이지 타이틀 / 관리 버튼 라벨 등 사용자-가시 모든 위치. 영어 / 일본어는 plain "Echo Note" 유지.
+- **헤더 도구 라벨 단순화** — "가이드 시작" → "둘러보기" (Tour / ツアー), "도움말 보기/숨기기" → "도움말" (Help / ヘルプ) 양 상태 통합.
+
+### 사용성·접근성 개선
+
+- **도움말 툴팁이 현재 테마 (soft/dark) 를 따름** — 이전엔 어두운 배경이 하드코딩되어 soft 테마에서 본문 글자가 거의 안 보였음.
+- **시스템 패널의 "둘러보기" 가이드가 패널 내부만 안내** — 이전엔 가이드가 헤더 / Echo Note Hero 로 새어나갔음. 다른 페이지의 페이지-레벨 가이드는 그대로 페이지 전체 안내 유지.
+- **도움말 모드에서 nav 버튼 클릭 시 모드 자동 OFF 후 이동** — 이전엔 도움말 모드 ON 상태에서 페이지 이동 버튼이 동작 안 하는 것처럼 보임. nav 클릭 한 번이면 모드 풀고 정상 이동.
+- **모바일에서 도움말 버튼 자동 숨김** — touch UI 에서 hover 어색해 비노출. 모드가 ON 인 채로 시야에서 사라지는 dead-end 는 위 자동 OFF 동작으로 해소.
+
+### Tour 정확도
+
+- `#btnToggleAll`, `#btnManageCleanup`, `#btnOpenTaskHistoryPage` 의 popover 가 generic "Task Management" 였던 것을 각각 collapse_toggle / cleanup_nav / task_history_nav 로 정확화.
+- selector 모호함으로 같은 element 가 두 번 highlight 되던 step 제거.
+- section + 안쪽 button 이 동일 i18n 키로 도움말 중복 발동하던 매핑 정리 (echo-config / device 의 button data-help 제거).
+
+### 인프라
+
+- **GitHub Actions build workflow 도입** — push / PR 마다 ubuntu-latest + Java 17 (temurin) + gradle cache 로 `bootJar -x test` 자동 실행. 릴리즈 워크플로우의 push → CI green → tag 게이트 정착.
+
+---
+
 ## v2.1.1 (2026-05-06) — Brand 로고 갱신
 
 ### 시각

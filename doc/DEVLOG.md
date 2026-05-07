@@ -6,6 +6,48 @@
 
 ---
 
+## 2026-05-07 — v2.2.0 release: 가이드 페이지 + 헤더 통합 + 다국어 보강
+
+긴 누적 작업 (v2.1.1 직후 ~ 본 시점) 을 한 commit (`4693e7e`) 으로 정리하고 minor 릴리즈로 배포.
+
+### 신규 / 통합
+
+- 새 `/guide` 페이지 — `WebController.guide` 핸들러 + `templates/guide.html` (TOC + 6 섹션 카드 계층). 시스템 패널 도구 줄 + 비-index 페이지 헤더에 [가이드] 버튼 추가.
+- 헤더 ⋯ 메뉴 패턴을 7 페이지에 통합. 신규 `static/js/more-menu.js` 로 `toggleMoreMenu` / `closeMoreMenu` 분리 (index 는 app.js, 그 외는 더 작은 standalone 로 옮겨 self-skip 가드 포함).
+
+### i18n full coverage
+
+- guide / echo-config 본문이 hardcoded 한국어로 굳어 있던 회귀 해소. ~84 신규 키 (`page.guide.*`, `page.echo_config.*`) × 4 locale = ~336 properties 라인 추가. echo-config 의 inline JS `showImportResult` 메시지 13개도 신규 `EC_I18N` 객체로 분리하고 `/*[[#{...}]]*/` 인라인 패턴으로 i18n.
+- "Echo Note (잔잔한 물결)" Korean 서브타이틀 도입 — `page.dashboard.section.echo_note`, `page.dashboard.btn.manage_echo_note`, `page.echo_note.title` (default + ko 만, en/ja 는 plain). README + index 코멘트 + guide 본문의 "마음의 울림" 도 "잔잔한 물결" 로 통일.
+
+### UX 폴리시
+
+- `.help-tooltip` CSS 가 `--card-bg / --primary-color / --border-color` 변수 사용으로 테마 따라감. soft 테마에서 본문 글자 invisible 회귀 해소.
+- `buildDashboardSteps` 의 candidate 필터에 `museSystemPanel.contains(el)` 검사 추가 — 시스템 패널 가이드 범위 confine.
+- `context-help.js` 의 도움말 모드 click handler 에 navigation 우회 분기 추가 — `<a href>` / `<button onclick=location.href>` 클릭 시 `setHelpMode(false)` 후 navigation 진행. 모바일에서 도움말 버튼이 숨겨진 상태로 도움말 모드 ON 인 dead-end 자동 해소.
+- 모바일 viewport (`≤768px`) 에서 `.btn-help-toggle { display: none }`.
+
+### Tour 매핑 정리
+
+- 시스템 패널 안 도움말/둘러보기 매핑 mismatch 점검 후 정정. `tour.muse.task_status`, `tour.muse.collapse_toggle`, `tour.muse.cleanup_nav`, `tour.muse.task_history_nav` 4개 신규 키로 popover 정확화. selector 중복 (`a[href="/echo-config"]` 와 `#btnManageEchoConfig`) 제거. section + 내부 button 의 동일 i18n 키 중복 매핑 정리.
+
+### 인프라
+
+- `.github/workflows/build.yml` 도입 — push / PR 마다 ubuntu-latest + Java 17 (temurin) + gradle cache 로 `bootJar -x test` 자동 실행.
+- 첫 회 실패: `./gradlew: Permission denied` (Windows commit 의 default mode `100644`). `git update-index --chmod=+x gradlew` → mode `100755` 로 commit 후 정상.
+
+### 결정·관찰
+
+- **단일 vs 분할 commit**: 누적 변경 18 파일 / +1057 / -114 가 6+ 트랙 (header consolidation, /guide page, tour fixes, tooltip theme, full i18n, brand subtitle) 에 걸쳐 있어 분할이 자연스러우나 파일 overlap (특히 index.html, guide.html, echo-config.html) 이 많아 깔끔히 자르기 어려움. 단일 commit + 종합 메시지로 결정. 향후 동일 상황엔 작업 단위마다 즉시 commit 권장.
+- **CI gate 의 가치**: 첫 push 가 즉시 fail (gradlew exec bit) — 로컬 windows 에선 동작하나 Linux runner 에서 처음 검증되는 종류의 회귀를 잡음. 릴리즈 워크플로우의 5.5단계 (push → CI green 대기) 가 의미있게 작동.
+
+### 미해결 / 후속
+
+- 아직 i18n 미적용인 페이지가 남아 있을 수 있음 — 사용자 보고 시점에 추가 패스.
+- 헤더 통합 패턴이 7 페이지에 흩어져 있음 — Thymeleaf fragment 로 추출하면 향후 변경 시 한 곳만 수정. 별도 트랙.
+
+---
+
 ## 2026-05-06 — v2.1.1 release: Brand 로고 갱신
 
 `img/muse_logo.jpeg` (실제 1024x1024 PNG) 를 새 source 로 받아 muse 의 brand asset 4종 일괄 재생성.
