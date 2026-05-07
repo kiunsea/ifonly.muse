@@ -51,7 +51,7 @@
         </header>
 
         <main>
-            <!-- Echo Note Hero (Phase 3) — 메인 = 마음의 울림 보관함 요약 뷰 -->
+            <!-- Echo Note Hero (Phase 3) — 메인 = 잔잔한 물결 보관함 요약 뷰 -->
             <section class="echo-note-hero">
                 <p class="echo-note-state-line">
                     <span th:text="#{page.dashboard.echo_note.state.holding(${echoNoteHoldingCount})}">보관 중인 메시지 0개</span>
@@ -140,14 +140,17 @@
                     th:text="#{nav.system_panel.close}">✕ 닫기</button>
         </div>
 
-        <!-- 도구 줄 (sticky): 가이드 / 도움말 / 모두 접기 — 헤더 아래, 본문 위. -->
+        <!-- 도구 줄 (sticky): 가이드 / 둘러보기 / 도움말 / 모두 접기 — 헤더 아래, 본문 위. -->
         <div class="muse-system-panel-tools">
+            <button id="btnGuidePage" class="btn btn-outline btn-sm" type="button"
+                onclick="location.href='/guide'"
+                th:text="#{nav.guide}">가이드</button>
             <button id="btnStartGuide" class="btn btn-outline btn-sm" type="button"
                 th:attr="data-help-title=#{tour.muse.guide.title},data-help-desc=#{tour.muse.guide.desc},data-help-placement='bottom'"
-                th:text="#{nav.guide_start}">가이드 시작</button>
+                th:text="#{nav.guide_start}">둘러보기</button>
             <button id="btnHelpMode" class="btn btn-outline btn-sm btn-help-toggle" type="button" data-help-toggle="true"
                 th:attr="data-label-show=#{page.help.toggle.show},data-label-hide=#{page.help.toggle.hide}"
-                th:text="#{page.help.toggle.show}">도움말 보기</button>
+                th:text="#{page.help.toggle.show}">도움말</button>
             <button id="btnToggleAll" class="btn btn-sm muse-system-panel-toggle-all" type="button" onclick="toggleAllCards()"
                     th:attr="data-help-title=#{help.dashboard.collapse_toggle.title},data-help-desc=#{help.dashboard.collapse_toggle.desc},data-help-placement='bottom'"
                     th:text="#{page.dashboard.collapse_all}">모두 접기</button>
@@ -204,7 +207,7 @@
 
             <!-- Task Status Section -->
             <section class="card collapsible-card" data-card-id="task-mgmt"
-                th:attr="data-help-title=#{tour.muse.task.title},data-help-desc=#{tour.muse.task.desc},data-help-placement='bottom'">
+                th:attr="data-help-title=#{tour.muse.task_status.title},data-help-desc=#{tour.muse.task_status.desc},data-help-placement='bottom'">
                 <div class="card-header" onclick="toggleCard('task-mgmt')">
                     <h2 th:text="#{page.dashboard.section.task_mgmt}">작업 상태</h2>
                     <span class="collapse-icon">&#9660;</span>
@@ -368,7 +371,6 @@
                 </div>
 
                 <a id="btnManageEchoConfig" href="/echo-config" class="btn btn-primary" style="margin-top: 15px;"
-                         th:attr="data-help-title=#{tour.muse.echo_config.title},data-help-desc=#{tour.muse.echo_config.desc},data-help-placement='top'"
                    th:text="#{page.dashboard.btn.manage_echo_config}">
                     Echo Server 설정 관리
                 </a>
@@ -418,8 +420,7 @@
                     </p>
                 </div>
 
-                <a id="btnDeviceManage" href="/device/register" class="btn btn-primary"
-                   th:attr="data-help-title=#{tour.muse.device.title},data-help-desc=#{tour.muse.device.desc}">
+                <a id="btnDeviceManage" href="/device/register" class="btn btn-primary">
                     <span th:if="${deviceStatus.registered}" th:text="#{page.dashboard.btn.manage_device}">디바이스 등록 관리</span>
                     <span th:unless="${deviceStatus.registered}" th:text="#{page.dashboard.btn.register_device}">디바이스 등록</span>
                 </a>
@@ -579,7 +580,15 @@
         intervalTitle: /*[[#{tour.muse.interval.title}]]*/ 'Alive-Check 주기',
         intervalDesc: /*[[#{tour.muse.interval.desc}]]*/ '폴링 주기와 임계 일수를 조절해 자동 실행 민감도를 설정합니다.',
         fullTestTitle: /*[[#{tour.muse.full_test.title}]]*/ '전체 연결 테스트',
-        fullTestDesc: /*[[#{tour.muse.full_test.desc}]]*/ '현재 설정 기준으로 통신 상태를 검증합니다.'
+        fullTestDesc: /*[[#{tour.muse.full_test.desc}]]*/ '현재 설정 기준으로 통신 상태를 검증합니다.',
+        taskStatusTitle: /*[[#{tour.muse.task_status.title}]]*/ '작업 상태',
+        taskStatusDesc: /*[[#{tour.muse.task_status.desc}]]*/ '최근 작업 실행 결과 요약과 상세 이력 페이지로 이동할 수 있어요.',
+        collapseToggleTitle: /*[[#{tour.muse.collapse_toggle.title}]]*/ '모두 접기 / 펼치기',
+        collapseToggleDesc: /*[[#{tour.muse.collapse_toggle.desc}]]*/ '시스템 패널 안 카드들을 한 번에 접거나 펼칩니다.',
+        cleanupNavTitle: /*[[#{tour.muse.cleanup_nav.title}]]*/ '정리 경로 관리',
+        cleanupNavDesc: /*[[#{tour.muse.cleanup_nav.desc}]]*/ 'cleanup 경로 등록·편집 페이지로 이동합니다.',
+        taskHistoryNavTitle: /*[[#{tour.muse.task_history_nav.title}]]*/ '작업 수행 이력',
+        taskHistoryNavDesc: /*[[#{tour.muse.task_history_nav.desc}]]*/ '모든 자동/수동 작업의 상세 실행 로그 페이지로 이동합니다.'
     };
 
     // ===== Language Menu Combo =====

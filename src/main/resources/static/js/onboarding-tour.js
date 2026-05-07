@@ -58,7 +58,15 @@
             taskHistoryFiltersTitle: 'Detailed Filters',
             taskHistoryFiltersDesc: 'Refine records by group, task key, status, and date range.',
             taskHistoryLoadTitle: 'Load History',
-            taskHistoryLoadDesc: 'Fetch task history using the active filter settings.'
+            taskHistoryLoadDesc: 'Fetch task history using the active filter settings.',
+            taskStatusTitle: 'Task Status',
+            taskStatusDesc: 'Quick summary of recent task runs with a link to the full execution history page.',
+            collapseToggleTitle: 'Collapse / Expand All',
+            collapseToggleDesc: 'Collapse or expand every card inside the system panel at once.',
+            cleanupNavTitle: 'Cleanup Paths',
+            cleanupNavDesc: 'Open the dedicated page to register and edit cleanup paths.',
+            taskHistoryNavTitle: 'Task Execution History',
+            taskHistoryNavDesc: 'Open the detailed execution log page for every automatic and manual task.'
         },
         window.MUSE_TOUR_I18N || {}
     );
@@ -96,8 +104,8 @@
             {
                 element: '#btnToggleAll',
                 popover: {
-                    title: i18n.taskTitle,
-                    description: i18n.taskDesc
+                    title: i18n.collapseToggleTitle,
+                    description: i18n.collapseToggleDesc
                 }
             },
             {
@@ -124,22 +132,22 @@
             {
                 element: 'section[data-card-id="task-mgmt"]',
                 popover: {
-                    title: i18n.taskTitle,
-                    description: i18n.taskDesc
+                    title: i18n.taskStatusTitle,
+                    description: i18n.taskStatusDesc
                 }
             },
             {
                 element: '#btnManageCleanup',
                 popover: {
-                    title: i18n.taskTitle,
-                    description: i18n.taskDesc
+                    title: i18n.cleanupNavTitle,
+                    description: i18n.cleanupNavDesc
                 }
             },
             {
                 element: '#btnOpenTaskHistoryPage',
                 popover: {
-                    title: i18n.taskTitle,
-                    description: i18n.taskDesc
+                    title: i18n.taskHistoryNavTitle,
+                    description: i18n.taskHistoryNavDesc
                 }
             },
             {
@@ -150,14 +158,7 @@
                 }
             },
             {
-                element: 'a[href="/echo-config"]',
-                popover: {
-                    title: i18n.echoConfigTitle,
-                    description: i18n.echoConfigDesc
-                }
-            },
-            {
-                element: 'a[href="/device/register"]',
+                element: '#btnDeviceManage',
                 popover: {
                     title: i18n.deviceTitle,
                     description: i18n.deviceDesc

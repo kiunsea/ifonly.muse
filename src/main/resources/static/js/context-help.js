@@ -170,6 +170,27 @@
         storeHelpMode(enabled);
     }
 
+    /**
+     * 클릭 대상이 navigation 요소인지 — page 이동을 발생시키는 anchor 또는 button.
+     * 도움말 모드가 활성화돼 있더라도 navigation 클릭은 차단하지 않고, 모드를 OFF 한 뒤
+     * 브라우저가 default 동작 (페이지 이동) 을 그대로 수행하도록 한다.
+     */
+    function isNavigationTarget(el) {
+        if (!el) return false;
+        if (el.tagName === 'A') {
+            const href = el.getAttribute('href');
+            if (!href) return false;
+            if (href.startsWith('#')) return false; // anchor link — 같은 페이지 내 이동, 도움말 의도 유지
+            if (href.toLowerCase().startsWith('javascript:')) return false;
+            return true;
+        }
+        if (el.tagName === 'BUTTON') {
+            const onclick = el.getAttribute('onclick') || '';
+            return /location\.href|location\.assign|window\.open|window\.location/.test(onclick);
+        }
+        return false;
+    }
+
     function bindHelpTargets() {
         document.querySelectorAll('[data-help-title], [data-help-desc]').forEach(function (target) {
             if (target.dataset.helpBound === 'true') {
@@ -186,7 +207,15 @@
                     return;
                 }
 
-                // In help mode, taps/clicks should reveal help instead of triggering page actions.
+                // navigation 요소 (anchor with href / location.href button) 는 도움말 모드에서도 그대로 이동.
+                // 모드는 자동 OFF 처리하여 다음 페이지에서 다른 nav 버튼 클릭 시 같은 함정에 빠지지 않도록.
+                const navEl = event.target.closest('a[href], button[onclick]');
+                if (navEl && (navEl === target || target.contains(navEl)) && isNavigationTarget(navEl)) {
+                    setHelpMode(false);
+                    return; // preventDefault 호출 안 함 — 브라우저가 navigation 수행
+                }
+
+                // 비-navigation 클릭은 기존 의도 유지: tooltip 표시 + page action 차단.
                 event.preventDefault();
                 event.stopPropagation();
                 toggleTooltip(target);

@@ -54,16 +54,31 @@
                     </h1>
                     <p class="subtitle" th:text="#{page.echo_config.subtitle}">Echo Server 연결 정보 확인 및 Alive-Check 설정 관리</p>
                 </div>
-                <div class="lang-switcher" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <button id="btnStartGuide" class="btn btn-outline btn-sm" type="button" style="margin-right: 8px;"
+                <div class="muse-action-group" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button id="btnGuidePage" class="btn btn-outline btn-sm" type="button"
+                        onclick="location.href='/guide'"
+                        th:text="#{nav.guide}">가이드</button>
+                    <button id="btnStartGuide" class="btn btn-outline btn-sm" type="button"
                         th:attr="data-help-title=#{tour.muse.guide.title},data-help-desc=#{tour.muse.guide.desc},data-help-placement='bottom'"
-                        th:text="#{nav.guide_start}">가이드 시작</button>
+                        th:text="#{nav.guide_start}">둘러보기</button>
                     <button id="btnHelpMode" class="btn btn-outline btn-sm btn-help-toggle" type="button" data-help-toggle="true"
                         th:attr="data-label-show=#{page.help.toggle.show},data-label-hide=#{page.help.toggle.hide}"
-                        th:text="#{page.help.toggle.show}">도움말 보기</button>
-                    <a th:href="@{''(lang='ko')}" th:classappend="${#locale.language == 'ko'} ? ' active' : ''" th:text="#{nav.lang.ko}">한국어</a>
-                    <a th:href="@{''(lang='en')}" th:classappend="${#locale.language == 'en'} ? ' active' : ''" th:text="#{nav.lang.en}">EN</a>
-                    <a th:href="@{''(lang='ja')}" th:classappend="${#locale.language == 'ja'} ? ' active' : ''" th:text="#{nav.lang.ja}">日本語</a>
+                        th:text="#{page.help.toggle.show}">도움말</button>
+                    <div class="muse-more-menu">
+                        <button type="button" class="btn btn-outline btn-sm muse-more-toggle"
+                                onclick="toggleMoreMenu(event)"
+                                th:attr="title=#{nav.more_menu.tooltip}"
+                                title="더보기">⋯</button>
+                        <div class="muse-more-dropdown" id="moreMenuDropdown" style="display:none;">
+                            <a href="#" id="museThemeToggle" class="muse-more-item"
+                               onclick="(function(){var cur=document.documentElement.dataset.theme==='dark'?'dark':'soft';var t=cur==='dark'?'soft':'dark';localStorage.setItem('theme-preference',t);if(t==='soft')document.documentElement.removeAttribute('data-theme');else document.documentElement.dataset.theme=t;fetch('/api/settings/theme',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({theme:t})}).catch(function(){});})();closeMoreMenu();return false;"
+                               th:text="#{nav.theme}">테마</a>
+                            <div class="muse-more-divider"></div>
+                            <a class="muse-more-item" th:href="@{''(lang='ko')}" onclick="closeMoreMenu()" th:text="#{nav.lang.ko}">한국어</a>
+                            <a class="muse-more-item" th:href="@{''(lang='en')}" onclick="closeMoreMenu()" th:text="#{nav.lang.en}">EN</a>
+                            <a class="muse-more-item" th:href="@{''(lang='ja')}" onclick="closeMoreMenu()" th:text="#{nav.lang.ja}">日本語</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
@@ -95,16 +110,16 @@
             <section id="echoCredentialSection" class="card"
                 th:attr="data-help-title=#{tour.muse.credential.title},data-help-desc=#{tour.muse.credential.desc},data-help-placement='bottom'">
                 <h2><span th:text="#{page.echo_config.section.connect}">Echo Server 연결하기</span>
-                    <span id="savedBadge" class="saved-badge" style="display:none;">저장됨</span>
+                    <span id="savedBadge" class="saved-badge" style="display:none;" th:text="#{page.echo_config.badge.saved}">저장됨</span>
                 </h2>
-                <p style="margin-bottom: 14px; color: var(--text-secondary); font-size: 0.9rem;">
-                    Echo Server의 <strong>Muse Agent &gt; 자격증명</strong> 페이지에서 발급한 연결 정보를 붙여넣거나,
-                    아래 필드에 직접 입력하세요. 저장 후 에이전트를 재시작하면 새 연결 정보가 적용됩니다.
+                <p style="margin-bottom: 14px; color: var(--text-secondary); font-size: 0.9rem;" th:utext="#{page.echo_config.intro}">
+                    Echo Server의 자격증명 페이지에서 발급한 연결 정보를 붙여넣거나, 아래 필드에 직접 입력하세요.
                 </p>
 
                 <!-- Paste env template -->
                 <div style="margin-bottom: 14px;">
-                    <label style="display:block; font-size:0.85rem; color:var(--text-secondary); margin-bottom:6px;">
+                    <label style="display:block; font-size:0.85rem; color:var(--text-secondary); margin-bottom:6px;"
+                           th:text="#{page.echo_config.label.paste}">
                         연결 정보 붙여넣기 (ECHO_SERVER_URL=... 형식)
                     </label>
                         <textarea id="envPasteArea" class="import-textarea"
@@ -112,7 +127,7 @@
                               placeholder="ECHO_SERVER_URL=https://...\nECHO_SERVER_CLIENT_ID=muse-...\nECHO_SERVER_CLIENT_SECRET=..."></textarea>
                         <button id="btnParseEnv" class="btn btn-outline" style="margin-top:8px; font-size:0.85rem;"
                             th:attr="data-help-title=#{help.echo.parse.title},data-help-desc=#{help.echo.parse.desc},data-help-placement='top'"
-                            onclick="parseEnvString()">입력값 채우기</button>
+                            onclick="parseEnvString()" th:text="#{page.echo_config.btn.parse_env}">입력값 채우기</button>
                 </div>
 
                 <!-- Manual fields -->
@@ -132,38 +147,38 @@
                     <div class="import-field">
                         <label for="inputClientSecret">Client Secret</label>
                            <input type="password" id="inputClientSecret"
-                               th:attr="data-help-title=#{help.echo.client_secret.title},data-help-desc=#{help.echo.client_secret.desc},data-help-placement='right'"
+                               th:attr="data-help-title=#{help.echo.client_secret.title},data-help-desc=#{help.echo.client_secret.desc},data-help-placement='right',placeholder=#{page.echo_config.placeholder.secret}"
                                placeholder="발급 시 한 번만 표시되는 secret"/>
                     </div>
                 </div>
                 <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
                         <button id="btnSaveEchoCredentials" class="btn btn-primary"
                             th:attr="data-help-title=#{help.echo.save.title},data-help-desc=#{help.echo.save.desc},data-help-placement='top'"
-                            onclick="saveEchoCredentials()">저장 후 연결 테스트</button>
+                            onclick="saveEchoCredentials()" th:text="#{page.echo_config.btn.save_test}">저장 후 연결 테스트</button>
                         <button id="btnTestEchoCredentials" class="btn btn-secondary"
                             th:attr="data-help-title=#{help.echo.test_input.title},data-help-desc=#{help.echo.test_input.desc},data-help-placement='top'"
-                            onclick="testEchoCredentialsOnly()">입력값으로 연결 테스트</button>
+                            onclick="testEchoCredentialsOnly()" th:text="#{page.echo_config.btn.test_input}">입력값으로 연결 테스트</button>
                         <button id="btnLoadSavedCredentials" class="btn btn-outline"
                             th:attr="data-help-title=#{help.echo.load_saved.title},data-help-desc=#{help.echo.load_saved.desc},data-help-placement='top'"
-                            onclick="loadSavedCredentials()">저장된 연결 정보 불러오기</button>
+                            onclick="loadSavedCredentials()" th:text="#{page.echo_config.btn.load_saved}">저장된 연결 정보 불러오기</button>
                 </div>
                 <div id="importResult" class="import-result"></div>
                 <!-- 저장 성공 후 재시작 안내 -->
                 <div id="restartGuide" style="display:none; margin-top:16px; padding:14px 16px; border-radius:8px;
                      background:rgba(255,193,7,0.1); border:1px solid rgba(255,193,7,0.4); color:var(--text-primary);">
-                    <strong style="color:#f0b400;">&#9888; 에이전트 재시작 필요</strong>
-                    <p style="margin:8px 0 6px; font-size:0.9rem;">
+                    <strong style="color:#f0b400;">&#9888; <span th:text="#{page.echo_config.restart.title}">에이전트 재시작 필요</span></strong>
+                    <p style="margin:8px 0 6px; font-size:0.9rem;" th:text="#{page.echo_config.restart.body}">
                         OAuth2 토큰 발급 설정(URL / Client ID / Secret)은 재시작 후 적용됩니다.
                     </p>
                     <div id="restartGuideWindows" style="display:none;">
-                        <p style="margin:4px 0 6px; font-size:0.88rem; color:var(--text-secondary);">Windows 서비스로 실행 중인 경우 — <em>관리자 권한 명령 프롬프트</em>에서:</p>
+                        <p style="margin:4px 0 6px; font-size:0.88rem; color:var(--text-secondary);" th:utext="#{page.echo_config.restart.windows_intro}">Windows 서비스로 실행 중인 경우:</p>
                         <pre style="background:var(--card-bg); padding:10px 14px; border-radius:6px; font-size:0.84rem; margin:4px 0 8px; overflow-x:auto;">sc stop muse-agent &amp;&amp; sc start muse-agent</pre>
-                        <p style="margin:0 0 4px; font-size:0.88rem; color:var(--text-secondary);">또는 WinSW 설치 폴더에서:</p>
+                        <p style="margin:0 0 4px; font-size:0.88rem; color:var(--text-secondary);" th:text="#{page.echo_config.restart.windows_alt}">또는 WinSW 설치 폴더에서:</p>
                         <pre style="background:var(--card-bg); padding:10px 14px; border-radius:6px; font-size:0.84rem; margin:4px 0; overflow-x:auto;">muse-agent-service.exe restart</pre>
-                        <p style="margin:6px 0 0; font-size:0.88rem; color:var(--text-secondary);">서비스가 아닌 일반 실행이라면 실행 중인 muse-agent 창을 닫고 배치 파일로 재시작하세요.</p>
+                        <p style="margin:6px 0 0; font-size:0.88rem; color:var(--text-secondary);" th:text="#{page.echo_config.restart.windows_console}">서비스가 아닌 일반 실행이라면 muse-agent 창을 닫고 재시작.</p>
                     </div>
                     <div id="restartGuideOther" style="display:none;">
-                        <p style="margin:4px 0 0; font-size:0.88rem; color:var(--text-secondary);">실행 중인 muse-agent 프로세스를 종료 후 재시작하세요.</p>
+                        <p style="margin:4px 0 0; font-size:0.88rem; color:var(--text-secondary);" th:text="#{page.echo_config.restart.other}">muse-agent 프로세스를 종료 후 재시작.</p>
                     </div>
                 </div>
             </section>
@@ -233,6 +248,24 @@
         intervalDesc: /*[[#{tour.muse.interval.desc}]]*/ '폴링 주기와 임계 일수를 조절해 자동 실행 민감도를 설정합니다.',
         fullTestTitle: /*[[#{tour.muse.full_test.title}]]*/ '전체 연결 테스트',
         fullTestDesc: /*[[#{tour.muse.full_test.desc}]]*/ '현재 설정 기준으로 통신 상태를 검증합니다.'
+    };
+
+    // showImportResult 등 본 페이지 JS 메시지의 i18n 사전.
+    // 모든 키는 messages*.properties 의 page.echo_config.js.* 와 1:1 대응.
+    const EC_I18N = {
+        parsed: /*[[#{page.echo_config.js.parsed}]]*/ '설정 문자열을 파싱했습니다.',
+        loadFailed: /*[[#{page.echo_config.js.load_failed}]]*/ '저장된 값을 불러오지 못했습니다.',
+        loadedWithSecret: /*[[#{page.echo_config.js.loaded_with_secret}]]*/ '저장된 URL/Client ID를 불러왔습니다. secret은 보안상 다시 입력해주세요.',
+        noSecret: /*[[#{page.echo_config.js.no_secret}]]*/ '현재 저장된 secret이 없습니다. 새로 입력 후 저장해주세요.',
+        loadError: /*[[#{page.echo_config.js.load_error}]]*/ '불러오기 실패',
+        urlRequired: /*[[#{page.echo_config.js.url_required}]]*/ 'URL은 필수 입력값입니다.',
+        bothOrNeither: /*[[#{page.echo_config.js.both_or_neither}]]*/ 'Client ID/Client Secret은 둘 다 입력하거나 둘 다 비워두세요.',
+        saveTestFailed: /*[[#{page.echo_config.js.save_test_failed}]]*/ '저장/테스트 실패',
+        responseTimeLabel: /*[[#{page.echo_config.js.response_time_label}]]*/ '응답 시간',
+        saveError: /*[[#{page.echo_config.js.save_error}]]*/ '저장 실패',
+        fieldsRequired: /*[[#{page.echo_config.js.fields_required}]]*/ 'URL / Client ID / Client Secret를 모두 입력해주세요.',
+        testDone: /*[[#{page.echo_config.js.test_done}]]*/ '테스트 완료',
+        testError: /*[[#{page.echo_config.js.test_error}]]*/ '테스트 실패'
     };
 
     function setButtonLoading(btn, loading) {
@@ -305,7 +338,7 @@
             document.getElementById('inputClientSecret').value = parsed.ECHO_SERVER_CLIENT_SECRET;
         }
 
-        showImportResult('설정 문자열을 파싱했습니다.', true);
+        showImportResult(EC_I18N.parsed, true);
     }
 
     async function loadSavedCredentials() {
@@ -313,7 +346,7 @@
             const resp = await fetch('/api/settings/echo-credentials');
             const data = await resp.json();
             if (!data.success) {
-                showImportResult(data.message || '저장된 값을 불러오지 못했습니다.', false);
+                showImportResult(data.message || EC_I18N.loadFailed, false);
                 return;
             }
             document.getElementById('inputEchoUrl').value = data.url || '';
@@ -324,12 +357,12 @@
                 savedBadge.style.display = data.saved ? 'inline-block' : 'none';
             }
             if (data.clientSecretSaved) {
-                showImportResult('저장된 URL/Client ID를 불러왔습니다. secret은 보안상 다시 입력해주세요.', true);
+                showImportResult(EC_I18N.loadedWithSecret, true);
             } else {
-                showImportResult('현재 저장된 secret이 없습니다. 새로 입력 후 저장해주세요.', false);
+                showImportResult(EC_I18N.noSecret, false);
             }
         } catch (e) {
-            showImportResult('불러오기 실패: ' + e.message, false);
+            showImportResult(EC_I18N.loadError + ': ' + e.message, false);
         }
     }
 
@@ -339,12 +372,12 @@
         const clientSecret = (document.getElementById('inputClientSecret').value || '').trim();
 
         if (!url) {
-            showImportResult('URL은 필수 입력값입니다.', false);
+            showImportResult(EC_I18N.urlRequired, false);
             return;
         }
 
         if ((clientId && !clientSecret) || (!clientId && clientSecret)) {
-            showImportResult('Client ID/Client Secret은 둘 다 입력하거나 둘 다 비워두세요.', false);
+            showImportResult(EC_I18N.bothOrNeither, false);
             return;
         }
 
@@ -356,15 +389,15 @@
             });
             const data = await resp.json();
             if (!data.success) {
-                showImportResult(data.message || '저장/테스트 실패', false);
+                showImportResult(data.message || EC_I18N.saveTestFailed, false);
                 return;
             }
             const savedBadge = document.getElementById('savedBadge');
             if (savedBadge) savedBadge.style.display = 'inline-block';
-            showImportResult(data.message + ' (응답 시간: ' + (data.responseTime || 'N/A') + ')', true);
+            showImportResult(data.message + ' (' + EC_I18N.responseTimeLabel + ': ' + (data.responseTime || 'N/A') + ')', true);
             showRestartGuide();
         } catch (e) {
-            showImportResult('저장 실패: ' + e.message, false);
+            showImportResult(EC_I18N.saveError + ': ' + e.message, false);
         }
     }
 
@@ -389,7 +422,7 @@
         const clientSecret = (document.getElementById('inputClientSecret').value || '').trim();
 
         if (!url || !clientId || !clientSecret) {
-            showImportResult('URL / Client ID / Client Secret를 모두 입력해주세요.', false);
+            showImportResult(EC_I18N.fieldsRequired, false);
             return;
         }
 
@@ -400,9 +433,9 @@
                 body: JSON.stringify({ url, clientId, clientSecret })
             });
             const data = await resp.json();
-            showImportResult((data.message || '테스트 완료') + ' (응답 시간: ' + (data.responseTime || 'N/A') + ')', !!data.success);
+            showImportResult((data.message || EC_I18N.testDone) + ' (' + EC_I18N.responseTimeLabel + ': ' + (data.responseTime || 'N/A') + ')', !!data.success);
         } catch (e) {
-            showImportResult('테스트 실패: ' + e.message, false);
+            showImportResult(EC_I18N.testError + ': ' + e.message, false);
         }
     }
 
@@ -412,6 +445,7 @@
     /*]]>*/
     </script>
     <script th:src="@{/vendor/driverjs/driver.js.iife.js}"></script>
+    <script th:src="@{/js/more-menu.js}"></script>
     <script th:src="@{/js/onboarding-tour.js}"></script>
     <script th:src="@{/js/context-help.js}"></script>
 </body>

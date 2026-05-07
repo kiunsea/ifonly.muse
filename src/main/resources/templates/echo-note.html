@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="#{page.echo_note.title}">Echo Note 보관함</title>
+    <title th:text="#{page.echo_note.title}">Echo Note (잔잔한 물결) 보관함</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script>(function(){var t=localStorage.getItem('theme-preference');if(t)document.documentElement.dataset.theme=t;})()</script>
     <link rel="icon" type="image/svg+xml" th:href="@{/img/muse-agent.svg(v=${appVersion})}">
@@ -55,16 +55,29 @@
                             <span>Muse Agent</span>
                         </a>
                         <span class="service-title-divider">/</span>
-                        <span th:text="#{page.echo_note.title}">Echo Note 보관함</span>
+                        <span th:text="#{page.echo_note.title}">Echo Note (잔잔한 물결) 보관함</span>
                     </h1>
                     <p class="subtitle" th:text="#{page.echo_note.subtitle}">사용자 PC 에 보관되는 echo-note 메시지</p>
                 </div>
-                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <div class="muse-action-group" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                     <a href="/" class="btn btn-outline btn-sm" th:text="#{page.echo_note.btn.back_dashboard}">대시보드로</a>
-                    <div class="lang-switcher">
-                        <a th:href="@{''(lang='ko')}" th:classappend="${#locale.language == 'ko'} ? ' active' : ''" th:text="#{nav.lang.ko}">한국어</a>
-                        <a th:href="@{''(lang='en')}" th:classappend="${#locale.language == 'en'} ? ' active' : ''" th:text="#{nav.lang.en}">EN</a>
-                        <a th:href="@{''(lang='ja')}" th:classappend="${#locale.language == 'ja'} ? ' active' : ''" th:text="#{nav.lang.ja}">日本語</a>
+                    <button id="btnGuidePage" class="btn btn-outline btn-sm" type="button"
+                        onclick="location.href='/guide'"
+                        th:text="#{nav.guide}">가이드</button>
+                    <div class="muse-more-menu">
+                        <button type="button" class="btn btn-outline btn-sm muse-more-toggle"
+                                onclick="toggleMoreMenu(event)"
+                                th:attr="title=#{nav.more_menu.tooltip}"
+                                title="더보기">⋯</button>
+                        <div class="muse-more-dropdown" id="moreMenuDropdown" style="display:none;">
+                            <a href="#" id="museThemeToggle" class="muse-more-item"
+                               onclick="(function(){var cur=document.documentElement.dataset.theme==='dark'?'dark':'soft';var t=cur==='dark'?'soft':'dark';localStorage.setItem('theme-preference',t);if(t==='soft')document.documentElement.removeAttribute('data-theme');else document.documentElement.dataset.theme=t;fetch('/api/settings/theme',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({theme:t})}).catch(function(){});})();closeMoreMenu();return false;"
+                               th:text="#{nav.theme}">테마</a>
+                            <div class="muse-more-divider"></div>
+                            <a class="muse-more-item" th:href="@{''(lang='ko')}" onclick="closeMoreMenu()" th:text="#{nav.lang.ko}">한국어</a>
+                            <a class="muse-more-item" th:href="@{''(lang='en')}" onclick="closeMoreMenu()" th:text="#{nav.lang.en}">EN</a>
+                            <a class="muse-more-item" th:href="@{''(lang='ja')}" onclick="closeMoreMenu()" th:text="#{nav.lang.ja}">日本語</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -298,6 +311,7 @@
         };
         window.ECHO_NOTE_LOCALE = /*[[${#locale.language}]]*/ 'ko';
     </script>
+    <script th:src="@{/js/more-menu.js}"></script>
     <script th:src="@{/js/echo-note.js(v=${appVersion})}"></script>
 </body>
 </html>

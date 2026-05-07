@@ -159,6 +159,19 @@ public class WebController {
   }
 
   /**
+   * Static guide page — muse 가 제공하는 전체 기능을 카드 단위·계층 구조로 안내. 시스템 패널의 [가이드] 버튼에서 진입.
+   *
+   * @param model model
+   * @return view name
+   */
+  @GetMapping("/guide")
+  public String guide(Model model) {
+    model.addAttribute("appName", applicationName);
+    model.addAttribute("appVersion", changelogVersionService.getLatestVersion());
+    return "guide";
+  }
+
+  /**
    * Task settings page
    *
    * @param model model

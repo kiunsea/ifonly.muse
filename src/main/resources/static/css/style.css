@@ -738,6 +738,10 @@ footer {
     }
 
     .btn-help-toggle {
+        display: none;
+    }
+
+    .muse-system-panel-tools .btn {
         width: auto;
     }
 

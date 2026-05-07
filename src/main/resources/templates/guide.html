@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{page.guide.title}">Muse 가이드</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script>(function(){var t=localStorage.getItem('theme-preference');if(t)document.documentElement.dataset.theme=t;})()</script>
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/muse-agent.svg(v=${appVersion})}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico(v=${appVersion})}">
+    <style>
+        .guide-toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .guide-toc a { display: inline-block; padding: 4px 10px; border-radius: 999px; background: rgba(74,144,217,0.08); color: var(--text-primary); text-decoration: none; font-size: 0.85rem; }
+        .guide-toc a:hover { background: rgba(74,144,217,0.18); }
+        .guide-section { margin-bottom: 18px; }
+        .guide-section > h2 { display: flex; align-items: baseline; gap: 10px; }
+        .guide-section > h2 .step { color: var(--primary-color); font-weight: 700; }
+        .guide-feature { padding: 14px 16px; border: 1px solid var(--border-color); border-radius: 8px; margin-top: 10px; background: rgba(74,144,217,0.04); }
+        .guide-feature h3 { margin: 0 0 6px; display: flex; align-items: center; gap: 8px; font-size: 1rem; color: var(--text-primary); }
+        .guide-feature p { margin: 4px 0; color: var(--text-secondary); line-height: 1.6; font-size: 0.92rem; }
+        .guide-feature ul { margin: 6px 0 0 0; padding-left: 20px; color: var(--text-secondary); font-size: 0.9rem; }
+        .guide-feature ul li { margin: 3px 0; }
+        .guide-bucket-label { display: inline-block; padding: 3px 9px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-bottom: 8px; }
+        .guide-bucket-echo { background-color: rgba(23,162,184,0.18); color: var(--info-color); }
+        .guide-bucket-standalone { background-color: rgba(40,167,69,0.18); color: var(--success-color); }
+        .guide-badge-beta { background-color: rgba(255,193,7,0.2); color: var(--warning-color); padding: 2px 7px; border-radius: 3px; font-size: 0.72rem; font-weight: 600; }
+        .guide-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 10px; }
+        .guide-meta .meta-item { background: rgba(0,0,0,0.04); padding: 10px 12px; border-radius: 6px; }
+        .guide-meta .meta-item .meta-label { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 3px; }
+        .guide-meta .meta-item .meta-value { font-size: 0.92rem; color: var(--text-primary); font-family: 'Consolas', monospace; word-break: break-all; }
+        html[data-theme="dark"] .guide-meta .meta-item { background: rgba(255,255,255,0.04); }
+        html[data-theme="dark"] .guide-feature { background: rgba(74,144,217,0.06); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h1 class="service-title">
+                        <a href="/" class="service-title-brand">
+                            <img th:src="@{/img/muse-agent.svg(v=${appVersion})}" src="/img/muse-agent.svg" alt="Muse Agent" class="service-title-logo">
+                            <span>Muse Agent</span>
+                        </a>
+                        <span class="service-title-divider">/</span>
+                        <span th:text="#{page.guide.title}">가이드</span>
+                    </h1>
+                    <p class="subtitle" th:text="#{page.guide.subtitle}">Muse 가 제공하는 모든 기능을 한 곳에서 둘러보세요</p>
+                </div>
+                <div class="muse-action-group" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <div class="muse-more-menu">
+                        <button type="button" class="btn btn-outline btn-sm muse-more-toggle"
+                                onclick="toggleMoreMenu(event)"
+                                th:attr="title=#{nav.more_menu.tooltip}"
+                                title="더보기">⋯</button>
+                        <div class="muse-more-dropdown" id="moreMenuDropdown" style="display:none;">
+                            <a class="muse-more-item" href="/" th:text="#{page.echo_note.btn.back_dashboard}">대시보드로</a>
+                            <div class="muse-more-divider"></div>
+                            <a href="#" id="museThemeToggle" class="muse-more-item"
+                               onclick="(function(){var cur=document.documentElement.dataset.theme==='dark'?'dark':'soft';var t=cur==='dark'?'soft':'dark';localStorage.setItem('theme-preference',t);if(t==='soft')document.documentElement.removeAttribute('data-theme');else document.documentElement.dataset.theme=t;fetch('/api/settings/theme',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({theme:t})}).catch(function(){});})();closeMoreMenu();return false;"
+                               th:text="#{nav.theme}">테마</a>
+                            <div class="muse-more-divider"></div>
+                            <a class="muse-more-item" th:href="@{''(lang='ko')}" onclick="closeMoreMenu()" th:text="#{nav.lang.ko}">한국어</a>
+                            <a class="muse-more-item" th:href="@{''(lang='en')}" onclick="closeMoreMenu()" th:text="#{nav.lang.en}">EN</a>
+                            <a class="muse-more-item" th:href="@{''(lang='ja')}" onclick="closeMoreMenu()" th:text="#{nav.lang.ja}">日本語</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- 목차 -->
+            <section class="card">
+                <h2 th:text="#{page.guide.toc.title}">목차</h2>
+                <nav class="guide-toc">
+                    <a href="#sec-intro" th:text="#{page.guide.toc.intro}">1. Muse 는 무엇인가</a>
+                    <a href="#sec-privacy" th:text="#{page.guide.toc.privacy}">2. 강화 privacy 모델</a>
+                    <a href="#sec-flows" th:text="#{page.guide.toc.flows}">3. 주요 사용 흐름</a>
+                    <a href="#sec-features" th:text="#{page.guide.toc.features}">4. 기능 카탈로그</a>
+                    <a href="#sec-data" th:text="#{page.guide.toc.data}">5. 데이터·운영</a>
+                    <a href="#sec-roadmap" th:text="#{page.guide.toc.roadmap}">6. 향후 계획</a>
+                </nav>
+            </section>
+
+            <!-- 1. 소개 -->
+            <section id="sec-intro" class="card guide-section">
+                <h2><span class="step">1.</span> <span th:text="#{page.guide.intro.heading}">Muse 는 무엇인가</span></h2>
+                <p style="color: var(--text-secondary); line-height: 1.7;" th:utext="#{page.guide.intro.p1}">
+                    <strong>Muse Agent</strong> 는 if-only Echo 서비스의 PC 동반 에이전트입니다.
+                </p>
+                <p style="color: var(--text-secondary); line-height: 1.7; margin-top: 10px;" th:utext="#{page.guide.intro.p2}">
+                    가장 큰 역할은 <strong>Echo Note (잔잔한 물결)</strong> 의 강화 privacy 보관 경로를 제공하는 것이에요.
+                </p>
+            </section>
+
+            <!-- 2. Privacy 모델 -->
+            <section id="sec-privacy" class="card guide-section">
+                <h2><span class="step">2.</span> <span th:text="#{page.guide.privacy.heading}">강화 privacy 모델</span></h2>
+                <p style="color: var(--text-secondary); line-height: 1.7;" th:text="#{page.guide.privacy.intro}">
+                    Echo Note (잔잔한 물결) 본문은 다음 경로로만 흐릅니다:
+                </p>
+                <ul style="color: var(--text-secondary); line-height: 1.7; margin-top: 8px; padding-left: 22px;">
+                    <li th:utext="#{page.guide.privacy.li1}"><strong>보관</strong>: 사용자 PC 의 muse-agent SQLite</li>
+                    <li th:utext="#{page.guide.privacy.li2}"><strong>발송 시점</strong>: muse 가 echo 의 외부 API 로 가공본을 전달</li>
+                    <li th:utext="#{page.guide.privacy.li3}"><strong>echo 의 송신 로그</strong>: 메타 정보만 잔존</li>
+                </ul>
+                <p style="color: var(--text-secondary); line-height: 1.7; margin-top: 10px;" th:text="#{page.guide.privacy.outro}">
+                    OAuth2 자격증명은 Windows DPAPI 로 암호화된 secure-config 파일에 보관돼요.
+                </p>
+            </section>
+
+            <!-- 3. 사용 흐름 -->
+            <section id="sec-flows" class="card guide-section">
+                <h2><span class="step">3.</span> <span th:text="#{page.guide.flows.heading}">주요 사용 흐름</span></h2>
+
+                <div class="guide-feature">
+                    <h3 th:text="#{page.guide.flows.scenarioA.title}">📨 시나리오 A — Echo Note 보관·발송</h3>
+                    <ol style="color: var(--text-secondary); line-height: 1.7; margin: 4px 0 0 22px;">
+                        <li th:text="#{page.guide.flows.scenarioA.li1}">echo popup 진입</li>
+                        <li th:text="#{page.guide.flows.scenarioA.li2}">대시보드에서 보관</li>
+                        <li th:text="#{page.guide.flows.scenarioA.li3}">미리보기 → 보관</li>
+                        <li th:text="#{page.guide.flows.scenarioA.li4}">마침 처리 → 자동 발송</li>
+                        <li th:text="#{page.guide.flows.scenarioA.li5}">또는 즉시 수동 발송</li>
+                    </ol>
+                </div>
+
+                <div class="guide-feature">
+                    <h3 th:text="#{page.guide.flows.scenarioB.title}">🌡️ 시나리오 B — Alive 모니터링 + 자동 정리</h3>
+                    <ol style="color: var(--text-secondary); line-height: 1.7; margin: 4px 0 0 22px;">
+                        <li th:text="#{page.guide.flows.scenarioB.li1}">Alive-Check 폴링</li>
+                        <li th:text="#{page.guide.flows.scenarioB.li2}">EXPIRED 임계 시 cleanup</li>
+                        <li th:text="#{page.guide.flows.scenarioB.li3}">매 cycle 자동 만료 purge</li>
+                    </ol>
+                    <p style="margin-top: 8px;"><em th:text="#{page.guide.flows.scenarioB.note}">설정은 시스템 패널에서.</em></p>
+                </div>
+
+                <div class="guide-feature">
+                    <h3 th:text="#{page.guide.flows.scenarioC.title}">🗑️ 시나리오 C — 휴지통 수동 관리</h3>
+                    <ol style="color: var(--text-secondary); line-height: 1.7; margin: 4px 0 0 22px;">
+                        <li th:text="#{page.guide.flows.scenarioC.li1}">시스템 패널에서 조회</li>
+                        <li th:text="#{page.guide.flows.scenarioC.li2}">복원 또는 즉시 삭제</li>
+                        <li th:text="#{page.guide.flows.scenarioC.li3}">Purge Now 강제 실행</li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- 4. 기능 카탈로그 -->
+            <section id="sec-features" class="card guide-section">
+                <h2><span class="step">4.</span> <span th:text="#{page.guide.features.heading}">기능 카탈로그</span></h2>
+
+                <span class="guide-bucket-label guide-bucket-echo" th:text="#{page.guide.features.bucket.echo}">echo 서비스 연동</span>
+
+                <div class="guide-feature">
+                    <h3><span th:text="#{page.guide.features.echoNote.title}">Echo Note 보관함</span> <span class="guide-badge-beta" th:text="#{page.guide.features.echoNote.beta}">베타</span></h3>
+                    <p th:text="#{page.guide.features.echoNote.summary}">강화 privacy 메시지 보관함.</p>
+                    <ul>
+                        <li th:text="#{page.guide.features.echoNote.li1}">CRUD</li>
+                        <li th:text="#{page.guide.features.echoNote.li2}">AI 프리뷰</li>
+                        <li th:text="#{page.guide.features.echoNote.li3}">자동 발송 예약</li>
+                        <li th:text="#{page.guide.features.echoNote.li4}">즉시 수동 발송</li>
+                    </ul>
+                </div>
+
+                <div class="guide-feature">
+                    <h3 th:text="#{page.guide.features.alive.title}">Alive-Check 모니터링</h3>
+                    <p th:text="#{page.guide.features.alive.desc}">echo alive 상태 정기 폴링.</p>
+                </div>
+
+                <div class="guide-feature">
+                    <h3 th:text="#{page.guide.features.device.title}">디바이스 등록·재등록</h3>
+                    <p th:text="#{page.guide.features.device.desc}">echo 서비스에 본 PC 를 등록.</p>
+                </div>
+
+                <div class="guide-feature">
+                    <h3 th:text="#{page.guide.features.credential.title}">Echo Server 자격증명 관리</h3>
+                    <p th:text="#{page.guide.features.credential.desc}">OAuth2 client credentials.</p>
+                </div>
+
+                <div class="guide-feature">
+                    <h3 th:text="#{page.guide.features.cleanupAuto.title}">파일 정리 자동 실행</h3>
+                    <p th:text="#{page.guide.features.cleanupAuto.desc}">EXPIRED 시 cleanup 경로 정리.</p>
+                </div>
+
+                <div class="guide-feature">
+                    <h3 th:text="#{page.guide.features.trashAutoPurge.title}">휴지통 자동 만료 purge</h3>
+                    <p th:text="#{page.guide.features.trashAutoPurge.desc}">매 폴링 cycle 마다 만료분 영구 삭제.</p>
+                </div>
+
+                <span class="guide-bucket-label guide-bucket-standalone" style="margin-top: 18px;" th:text="#{page.guide.features.bucket.standalone}">에이전트 단독으로 동작</span>
+
+                <div class="guide-feature">
+                    <h3 th:text="#{page.guide.features.trashManual.title}">휴지통 수동 관리</h3>
+                    <p th:text="#{page.guide.features.trashManual.desc}">조회·복원·즉시 삭제.</p>
+                </div>
+
+                <div class="guide-feature">
+                    <h3 th:text="#{page.guide.features.cleanupPath.title}">Cleanup 경로 등록</h3>
+                    <p th:text="#{page.guide.features.cleanupPath.desc}">정리 경로 등록·편집·검증.</p>
+                </div>
+
+                <div class="guide-feature">
+                    <h3 th:text="#{page.guide.features.taskHistory.title}">작업 수행 이력</h3>
+                    <p th:text="#{page.guide.features.taskHistory.desc}">상세 로그 + 필터·정렬.</p>
+                </div>
+
+                <div class="guide-feature">
+                    <h3 th:text="#{page.guide.features.localSettings.title}">자체 설정</h3>
+                    <p th:text="#{page.guide.features.localSettings.desc}">Alive-Check 주기 등.</p>
+                </div>
+            </section>
+
+            <!-- 5. 데이터·운영 -->
+            <section id="sec-data" class="card guide-section">
+                <h2><span class="step">5.</span> <span th:text="#{page.guide.data.heading}">데이터·운영</span></h2>
+                <div class="guide-meta">
+                    <div class="meta-item">
+                        <div class="meta-label" th:text="#{page.guide.data.localDb.label}">로컬 DB</div>
+                        <div class="meta-value">%APPDATA%\ifonly-muse\muse-agent.db</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label" th:text="#{page.guide.data.secureConfig.label}">Secure config</div>
+                        <div class="meta-value" th:text="#{page.guide.data.secureConfig.value}">echo OAuth2 자격증명</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label" th:text="#{page.guide.data.port.label}">기본 포트</div>
+                        <div class="meta-value">8484</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label" th:text="#{page.guide.data.api.label}">echo external API</div>
+                        <div class="meta-value" th:text="#{page.guide.data.api.value}">unversioned (현재)</div>
+                    </div>
+                </div>
+                <p style="color: var(--text-secondary); line-height: 1.7; margin-top: 12px;" th:utext="#{page.guide.data.note}">
+                    부팅 시 호환 상태가 INFO 로그로 노출됩니다.
+                </p>
+            </section>
+
+            <!-- 6. 향후 계획 -->
+            <section id="sec-roadmap" class="card guide-section">
+                <h2><span class="step">6.</span> <span th:text="#{page.guide.roadmap.heading}">향후 계획</span></h2>
+                <p style="color: var(--text-secondary); line-height: 1.7;" th:text="#{page.guide.roadmap.intro}">
+                    검증·다듬기 진행 중이거나 향후 도입 예정인 항목:
+                </p>
+                <ul style="color: var(--text-secondary); line-height: 1.7; margin-top: 6px; padding-left: 22px;">
+                    <li th:utext="#{page.guide.roadmap.li1}"><strong>Echo Note 보관함</strong> 베타 → 정식</li>
+                    <li th:utext="#{page.guide.roadmap.li2}"><strong>자체 작업 스케줄링</strong></li>
+                    <li th:utext="#{page.guide.roadmap.li3}"><strong>파일 정리 수동 실행 트리거</strong></li>
+                    <li th:utext="#{page.guide.roadmap.li4}"><strong>외부 기여 정책</strong></li>
+                </ul>
+                <p style="color: var(--text-secondary); line-height: 1.7; margin-top: 12px;" th:utext="#{page.guide.roadmap.changelog}">
+                    상세한 변경 이력은 CHANGELOG.md 에서 확인할 수 있습니다.
+                </p>
+            </section>
+        </main>
+
+        <footer>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px;">
+                <a href="/" class="btn btn-secondary" th:text="#{page.echo_note.btn.back_dashboard}">대시보드로</a>
+            </div>
+            <p style="text-align: center; margin: 0;">&copy; 2026 if-only Project. Muse Agent v<span th:text="${appVersion}">0.0.0</span></p>
+        </footer>
+    </div>
+    <script th:src="@{/js/more-menu.js}"></script>
+</body>
+</html>

@@ -25,17 +25,30 @@
                 </h1>
                 <p class="subtitle" th:text="#{page.task_history.subtitle}">필터와 정렬로 상세 실행 이력을 조회합니다.</p>
             </div>
-            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div class="muse-action-group" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <button id="btnGuidePage" class="btn btn-outline btn-sm" type="button"
+                    onclick="location.href='/guide'"
+                    th:text="#{nav.guide}">가이드</button>
                 <button id="btnStartGuide" class="btn btn-outline btn-sm" type="button"
                     th:attr="data-help-title=#{tour.muse.guide.title},data-help-desc=#{tour.muse.guide.desc}"
-                    th:text="#{nav.guide_start}">가이드 시작</button>
+                    th:text="#{nav.guide_start}">둘러보기</button>
                 <button id="btnHelpMode" class="btn btn-outline btn-sm btn-help-toggle" type="button" data-help-toggle="true"
                     th:attr="data-label-show=#{page.help.toggle.show},data-label-hide=#{page.help.toggle.hide}"
-                    th:text="#{page.help.toggle.show}">도움말 보기</button>
-                <div class="lang-switcher">
-                    <a th:href="@{''(lang='ko')}" th:classappend="${#locale.language == 'ko'} ? ' active' : ''" th:text="#{nav.lang.ko}">한국어</a>
-                    <a th:href="@{''(lang='en')}" th:classappend="${#locale.language == 'en'} ? ' active' : ''" th:text="#{nav.lang.en}">EN</a>
-                    <a th:href="@{''(lang='ja')}" th:classappend="${#locale.language == 'ja'} ? ' active' : ''" th:text="#{nav.lang.ja}">日本語</a>
+                    th:text="#{page.help.toggle.show}">도움말</button>
+                <div class="muse-more-menu">
+                    <button type="button" class="btn btn-outline btn-sm muse-more-toggle"
+                            onclick="toggleMoreMenu(event)"
+                            th:attr="title=#{nav.more_menu.tooltip}"
+                            title="더보기">⋯</button>
+                    <div class="muse-more-dropdown" id="moreMenuDropdown" style="display:none;">
+                        <a href="#" id="museThemeToggle" class="muse-more-item"
+                           onclick="(function(){var cur=document.documentElement.dataset.theme==='dark'?'dark':'soft';var t=cur==='dark'?'soft':'dark';localStorage.setItem('theme-preference',t);if(t==='soft')document.documentElement.removeAttribute('data-theme');else document.documentElement.dataset.theme=t;fetch('/api/settings/theme',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({theme:t})}).catch(function(){});})();closeMoreMenu();return false;"
+                           th:text="#{nav.theme}">테마</a>
+                        <div class="muse-more-divider"></div>
+                        <a class="muse-more-item" th:href="@{''(lang='ko')}" onclick="closeMoreMenu()" th:text="#{nav.lang.ko}">한국어</a>
+                        <a class="muse-more-item" th:href="@{''(lang='en')}" onclick="closeMoreMenu()" th:text="#{nav.lang.en}">EN</a>
+                        <a class="muse-more-item" th:href="@{''(lang='ja')}" onclick="closeMoreMenu()" th:text="#{nav.lang.ja}">日本語</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -200,6 +213,7 @@ window.MUSE_TOUR_I18N = {
 </script>
 <script th:src="@{/js/task-history.js}"></script>
 <script th:src="@{/vendor/driverjs/driver.js.iife.js}"></script>
+<script th:src="@{/js/more-menu.js}"></script>
 <script th:src="@{/js/onboarding-tour.js}"></script>
 <script th:src="@{/js/context-help.js}"></script>
 </body>
