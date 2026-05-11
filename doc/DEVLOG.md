@@ -6,6 +6,39 @@
 
 ---
 
+## 2026-05-12 — v2.2.1 hotfix: 대시보드 렌더 회귀
+
+### 발견
+
+사용자가 Windows 서비스 실행 로그 (`tmp/muse-agent-error.log`) 를 공유. 두 종류의 에러 발생 중:
+
+1. **Echo Server alive-check 실패** — generic 연결 에러. 자격증명 미설정 또는 echo 측 가용성 이슈로 추정 (muse 측 코드 문제 아님). 사용자 환경에서 echo-config 페이지로 진단 권장.
+2. **(치명) Thymeleaf `SpelParseException`** — index 템플릿 line 86 의 status 라벨 표현식이 `${msg.status == 'DRAFT' ? #{key} : ...}` 형태. 바깥 `${...}` 가 전체를 SpEL 로 만들어 `#{...}` 를 SpEL 함수처럼 해석하다 실패. READY/SENT 상태 Echo Note 가 하나라도 있으면 대시보드 (`/`) 가 500 에러로 깨짐.
+
+### 수정
+
+`templates/index.html` 의 해당 표현식을 표준 패턴으로 교체:
+
+```
+${msg.status == 'DRAFT'} ? #{key.draft}
+: (${msg.status == 'READY'} ? #{key.ready} : #{key.sent})
+```
+
+각 boolean 비교만 `${...}`, ternary 와 `#{...}` 는 Thymeleaf attribute-레벨에 두면 SpEL 과 i18n 이 깨끗히 분리된다.
+
+다른 템플릿에 동일 패턴 (`\$\{[^}]*#\{`) 검색 → 0건. 회귀 단발 확인.
+
+### 부수
+
+- 메인 대시보드 subtitle 한국어를 "마음의 울림 보관소" → "잔잔한 물결 보관소" 로 변경. v2.1.x 의 brand metaphor 통일 일환.
+
+### 결정·관찰
+
+- **회귀가 v2.2.0 발표 후 사용자 실행 단계에 발견** — D2 체크리스트 (배포 ZIP 추출 → 1회 launch 시도) 가 dev 환경의 *비어 있는* DB 로만 검증되어 READY/SENT 메시지 케이스를 못 잡았다. 후속: D2 에 "DRAFT/READY/SENT 가 각각 하나 이상 존재하는 상태로 dashboard render 확인" 항목 추가 권장. 또는 자동 테스트 (template render unit test) 도입.
+- **template 에러는 compileJava 가 잡지 못함** — Thymeleaf 는 런타임 parser. CI 의 `bootJar` 도 미감지. integration test 추가 시 잡을 수 있음.
+
+---
+
 ## 2026-05-07 — v2.2.0 release: 가이드 페이지 + 헤더 통합 + 다국어 보강
 
 긴 누적 작업 (v2.1.1 직후 ~ 본 시점) 을 한 commit (`4693e7e`) 으로 정리하고 minor 릴리즈로 배포.

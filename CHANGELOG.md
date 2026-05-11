@@ -5,6 +5,18 @@
 
 ---
 
+## v2.2.1 (2026-05-12) — 핫픽스: 대시보드 렌더 회귀 + 메인 subtitle
+
+### Fix
+
+- **(critical) 대시보드 (`/`) 렌더 회귀 해소** — Echo Note Hero 의 메시지 상태 라벨이 SpEL expression 안에 Thymeleaf i18n placeholder (`#{...}`) 를 박은 잘못된 syntax 였음 (`${msg.status == 'DRAFT' ? #{...} : ...}` — 바깥 `${...}` 가 전체를 SpEL 로 만들어 `#{...}` 파싱 실패). READY/SENT 상태 Echo Note 가 하나라도 있는 사용자는 v2.2.0 의 대시보드 진입 시 500 에러로 페이지가 렌더 안 됐던 회귀. boolean 비교만 `${...}` 로 감싸고 ternary 와 `#{...}` 는 Thymeleaf 레벨에 두는 표준 패턴으로 교체.
+
+### 시각
+
+- **대시보드 subtitle 한국어 갱신** — "마음의 울림 보관소" → "잔잔한 물결 보관소". v2.1.x 부터 시작된 브랜드 metaphor 통일 (이전: 울림 → 새: 물결). 영어 ("Archive of quiet echoes") / 일본어 ("心の響きの保管庫") 는 각자의 metaphor 유지.
+
+---
+
 ## v2.2.0 (2026-05-07) — 가이드 페이지 + 헤더 통합 + 다국어 보강
 
 ### 새 기능

@@ -83,9 +83,9 @@
                         <div class="echo-note-msg-top">
                             <span class="echo-note-marker"></span>
                             <span class="echo-note-status-label"
-                                  th:text="${msg.status == 'DRAFT' ? #{page.dashboard.echo_note.status.draft}
-                                          : (msg.status == 'READY' ? #{page.dashboard.echo_note.status.ready}
-                                          : #{page.dashboard.echo_note.status.sent})}">초안</span>
+                                  th:text="${msg.status == 'DRAFT'} ? #{page.dashboard.echo_note.status.draft}
+                                          : (${msg.status == 'READY'} ? #{page.dashboard.echo_note.status.ready}
+                                          : #{page.dashboard.echo_note.status.sent})">초안</span>
                             <span th:if="${msg.status == 'SENT' and msg.sentAt != null}" class="echo-note-msg-date">
                                 · <span th:text="${#temporals.format(msg.sentAt, 'M월 d일')}">3월 14일</span>
                             </span>
